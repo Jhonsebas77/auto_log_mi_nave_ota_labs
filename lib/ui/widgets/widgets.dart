@@ -1,0 +1,50 @@
+library com.auto_log_mi_nave_ota_labs.app.ui.widgets;
+
+import 'dart:math' as math;
+
+import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+
+import '../../core/constants/constants.dart';
+import '../../core/enums/enums.dart';
+import '../../core/models/models.dart';
+import '../../core/providers/providers.dart';
+import '../../core/services/services.dart' show AttachmentPickerService;
+import '../../core/utils/utils.dart';
+import '../theme/theme.dart';
+
+part 'auth/corner_brackets.dart';
+part 'auth/diagnostic_strip.dart';
+part 'auth/grid_background.dart';
+part 'auth/scanline_overlay.dart';
+part 'auth/schematic_ring.dart';
+part 'blueprint_bottom_nav_bar.dart';
+part 'blueprint_color_picker.dart';
+part 'blueprint_form_app_bar.dart';
+part 'blueprint_primary_button.dart';
+part 'blueprint_scaffold.dart';
+part 'blueprint_text_field.dart';
+part 'blueprint_top_app_bar.dart';
+part 'countdown_chip.dart';
+part 'dashboard/document_status_row.dart';
+part 'dashboard/license_plate_restriction_card.dart';
+part 'dashboard/license_plate_restriction_schedule_sheet.dart';
+part 'dashboard/odometer_quick_update_card.dart';
+part 'dashboard/vehicle_selector.dart';
+part 'fuel/fuel_history_list.dart';
+part 'fuel/kpi_cards_row.dart';
+part 'fuel/performance_curve_chart.dart';
+part 'full_tank_badge.dart';
+part 'kpi_card.dart';
+part 'legal/document_expiration_countdown.dart';
+part 'lifespan_bar.dart';
+part 'maintenance/lifespan_bar_group.dart';
+part 'maintenance/service_history_segmented_list.dart';
+part 'ocr_scan_button.dart';
+part 'settings/version.dart';
+part 'snackbar.dart';
+part 'status_traffic_light.dart';
+part 'upload_zone.dart';

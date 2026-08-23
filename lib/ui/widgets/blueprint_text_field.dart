@@ -1,0 +1,54 @@
+part of com.auto_log_mi_nave_ota_labs.app.ui.widgets;
+
+class BlueprintTextField extends StatelessWidget {
+  const BlueprintTextField({
+    required this.label,
+    super.key,
+    this.controller,
+    this.focusNode,
+    this.obscureText = false,
+    this.keyboardType,
+    this.textInputAction,
+    this.validator,
+    this.readOnly = false,
+    this.onTap,
+    this.onChanged,
+    this.onFieldSubmitted,
+    this.suffixIcon,
+    this.textCapitalization = TextCapitalization.none,
+    this.maxLength,
+  });
+
+  final String label;
+  final TextEditingController? controller;
+  final FocusNode? focusNode;
+  final bool obscureText;
+  final TextInputType? keyboardType;
+  final TextInputAction? textInputAction;
+  final String? Function(String?)? validator;
+  final bool readOnly;
+  final VoidCallback? onTap;
+  final void Function(String)? onChanged;
+  final void Function(String)? onFieldSubmitted;
+  final Widget? suffixIcon;
+  final TextCapitalization textCapitalization;
+  final int? maxLength;
+
+  @override
+  Widget build(BuildContext context) => TextFormField(
+    controller: controller,
+    focusNode: focusNode,
+    obscureText: obscureText,
+    keyboardType: keyboardType,
+    textInputAction: textInputAction,
+    validator: validator,
+    readOnly: readOnly,
+    onTap: onTap,
+    onChanged: onChanged,
+    onFieldSubmitted: onFieldSubmitted,
+    textCapitalization: textCapitalization,
+    maxLength: maxLength,
+    style: AppTextStyles.bodyLarge,
+    decoration: InputDecoration(label: Text(label), suffixIcon: suffixIcon),
+  );
+}
