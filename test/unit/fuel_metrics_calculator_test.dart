@@ -96,5 +96,36 @@ void main() {
       expect(metrics.costPerKm, 750);
       expect(metrics.totalSpent, 150000);
     });
+
+    test(
+      'currentMonthSpent solo suma los tanqueos del mes de referencia',
+      () {
+        List<FuelLog> logs = <FuelLog>[
+          _log(
+            date: DateTime(2026, 1, 15),
+            odometer: 1000,
+            gallons: 10,
+            totalCost: 100000,
+          ),
+          _log(
+            date: DateTime(2026, 2, 5),
+            odometer: 1100,
+            gallons: 5,
+            totalCost: 60000,
+          ),
+          _log(
+            date: DateTime(2026, 2, 20),
+            odometer: 1200,
+            gallons: 5,
+            totalCost: 45000,
+          ),
+        ];
+        FuelMetrics metrics = calculateFuelMetrics(
+          logs,
+          now: DateTime(2026, 2, 28),
+        );
+        expect(metrics.currentMonthSpent, 105000);
+      },
+    );
   });
 }

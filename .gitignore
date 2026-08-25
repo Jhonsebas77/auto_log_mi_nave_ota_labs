@@ -141,3 +141,6 @@ config/dart_defines.local.json
 
 # Claude
 claude
+
+# Supabase
+supabase/sql

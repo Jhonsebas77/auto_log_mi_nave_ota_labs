@@ -18,6 +18,8 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
   final TextEditingController _odometerController = TextEditingController(
     text: '0',
   );
+  final TextEditingController _tankCapacityController =
+      TextEditingController();
   FuelType _fuelType = FuelType.gasolinaCorriente;
   String _color = colorToHex(kVehicleColorOptions.first.swatch);
   String? _photoPath;
@@ -32,6 +34,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
     _modelController.dispose();
     _yearController.dispose();
     _odometerController.dispose();
+    _tankCapacityController.dispose();
     super.dispose();
   }
 
@@ -50,6 +53,8 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
   }
 
   Future<void> _pickPhoto() async {
+    String? userId = ref.read(authControllerProvider).user?.id;
+    if (userId == null) return;
     String? path = await showModalBottomSheet<String?>(
       context: context,
       builder: (BuildContext context) => SafeArea(
@@ -61,7 +66,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
               onTap: () async {
                 String? p = await ref
                     .read(attachmentPickerServiceProvider)
-                    .pickImageFromCamera();
+                    .pickImageFromCamera(userId: userId, category: 'vehicle');
                 if (context.mounted) Navigator.pop(context, p);
               },
             ),
@@ -71,7 +76,7 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
               onTap: () async {
                 String? p = await ref
                     .read(attachmentPickerServiceProvider)
-                    .pickImageFromGallery();
+                    .pickImageFromGallery(userId: userId, category: 'vehicle');
                 if (context.mounted) Navigator.pop(context, p);
               },
             ),
@@ -100,11 +105,13 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
       fuelType: _fuelType,
       currentOdometer: int.parse(_odometerController.text),
       createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
       color: _color,
       photoUrl: _photoPath,
       nickname: _nicknameController.text.trim().isEmpty
           ? null
           : _nicknameController.text.trim(),
+      tankCapacityGallons: double.tryParse(_tankCapacityController.text),
     );
     await ref.read(vehiclesProvider.notifier).addVehicle(vehicle);
     if (!mounted) return;
@@ -201,6 +208,19 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
                 validator: (String? v) => int.tryParse(v ?? '') == null
                     ? 'Ingresa un número válido.'
                     : null,
+              ),
+              const SizedBox(height: 16),
+              BlueprintTextField(
+                label: 'Capacidad del tanque (galones, opcional)',
+                controller: _tankCapacityController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                validator: (String? v) => (v == null || v.trim().isEmpty)
+                    ? null
+                    : (double.tryParse(v) == null
+                          ? 'Ingresa un número válido.'
+                          : null),
               ),
               const SizedBox(height: 16),
               const Text('Color', style: AppTextStyles.bodySmall),

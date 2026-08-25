@@ -1,50 +1,77 @@
 part of com.auto_log_mi_nave_ota_labs.app.services;
 
-/// Selección local de adjuntos (foto/PDF) para documentos legales, facturas
-/// de mantenimiento y fotos de vehículo. Mock-friendly: no sube nada a
-/// Storage.
+/// Selección y subida de adjuntos (foto/PDF) para documentos legales,
+/// facturas de mantenimiento y fotos de vehículo.
 ///
-/// En mobile (Android/iOS) copia el archivo elegido al directorio de
-/// documentos de la app para que la ruta sobreviva más allá del archivo
-/// temporal del picker. En web no existe un directorio de documentos ni
-/// `dart:io` funcional: el navegador ya entrega una blob URL (`XFile.path`)
-/// estable durante la sesión, así que se usa directamente sin copiar.
+/// El archivo elegido se sube directo a Supabase Storage (bucket
+/// `attachments`, ver `supabase/sql/0002_storage.sql`) bajo
+/// `{userId}/{category}/{id}.{ext}`, y se retorna la URL pública resultante
+/// — ya no se guarda ninguna ruta local. Se lee como bytes (`XFile.readAsBytes`
+/// / `PlatformFile.bytes`) en vez de usar `dart:io`, así el mismo código
+/// funciona igual en mobile y en web.
 class AttachmentPickerService {
   final ImagePicker _imagePicker = ImagePicker();
 
-  Future<String?> pickImageFromCamera() => _pickImage(ImageSource.camera);
-  Future<String?> pickImageFromGallery() => _pickImage(ImageSource.gallery);
+  static const String _bucket = 'attachments';
 
-  Future<String?> _pickImage(ImageSource source) async {
+  StorageFileApi get _bucketApi =>
+      Supabase.instance.client.storage.from(_bucket);
+
+  Future<String?> pickImageFromCamera({
+    required String userId,
+    required String category,
+  }) => _pickImage(ImageSource.camera, userId: userId, category: category);
+
+  Future<String?> pickImageFromGallery({
+    required String userId,
+    required String category,
+  }) => _pickImage(ImageSource.gallery, userId: userId, category: category);
+
+  Future<String?> _pickImage(
+    ImageSource source, {
+    required String userId,
+    required String category,
+  }) async {
     XFile? picked = await _imagePicker.pickImage(
       source: source,
       imageQuality: 85,
     );
     if (picked == null) return null;
-    if (kIsWeb) return picked.path;
-    return _copyToAppStorage(picked.path);
+    return _upload(
+      bytes: await picked.readAsBytes(),
+      extension: picked.path.split('.').last,
+      userId: userId,
+      category: category,
+    );
   }
 
-  /// En web, `file_picker` no expone `path` (solo `bytes`), así que por
-  /// ahora esta función retorna null en esa plataforma — el flujo de fotos
-  /// (cámara/galería) sí funciona en web vía blob URL; adjuntar PDFs en web
-  /// requeriría un manejo basado en bytes, fuera de este alcance.
-  Future<String?> pickPdf() async {
-    if (kIsWeb) return null;
+  Future<String?> pickPdf({
+    required String userId,
+    required String category,
+  }) async {
     FilePickerResult? result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: <String>['pdf'],
+      withData: true,
     );
-    String? path = result?.files.single.path;
-    if (path == null) return null;
-    return _copyToAppStorage(path);
+    Uint8List? bytes = result?.files.single.bytes;
+    if (bytes == null) return null;
+    return _upload(
+      bytes: bytes,
+      extension: 'pdf',
+      userId: userId,
+      category: category,
+    );
   }
 
-  Future<String> _copyToAppStorage(String sourcePath) async {
-    Directory dir = await getApplicationDocumentsDirectory();
-    String extension = sourcePath.split('.').last;
-    String destination = '${dir.path}/attachment_${generateId()}.$extension';
-    await File(sourcePath).copy(destination);
-    return destination;
+  Future<String> _upload({
+    required Uint8List bytes,
+    required String extension,
+    required String userId,
+    required String category,
+  }) async {
+    String objectPath = '$userId/$category/${generateId()}.$extension';
+    await _bucketApi.uploadBinary(objectPath, bytes);
+    return _bucketApi.getPublicUrl(objectPath);
   }
 }

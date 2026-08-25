@@ -111,9 +111,20 @@ class _VehicleBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     String? photoUrl = vehicle.photoUrl;
     if (photoUrl != null) {
-      return Image(image: attachmentImageProvider(photoUrl), fit: BoxFit.cover);
+      return Image(
+        image: attachmentImageProvider(photoUrl),
+        fit: BoxFit.cover,
+        // Fotos viejas guardadas como ruta local (antes de subir a Supabase
+        // Storage) pueden ya no existir en disco — cae al mismo respaldo de
+        // color/ícono en vez de crashear.
+        errorBuilder: (_, __, ___) => _fallbackBackground(vehicle.color),
+      );
     }
-    Color swatch = colorSwatchForVehicle(vehicle.color);
+    return _fallbackBackground(vehicle.color);
+  }
+
+  Widget _fallbackBackground(String color) {
+    Color swatch = colorSwatchForVehicle(color);
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(

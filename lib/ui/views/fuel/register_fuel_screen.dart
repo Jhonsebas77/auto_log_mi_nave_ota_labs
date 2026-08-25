@@ -15,7 +15,7 @@ class _RegisterFuelScreenState extends ConsumerState<RegisterFuelScreen> {
   final TextEditingController _costController = TextEditingController();
   final TextEditingController _stationController = TextEditingController();
   DateTime _date = DateTime.now();
-  bool _fullTank = true;
+  bool _fullTank = false;
   bool _saving = false;
 
   @override
@@ -41,13 +41,18 @@ class _RegisterFuelScreenState extends ConsumerState<RegisterFuelScreen> {
   Future<void> _submit(String vehicleId) async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _saving = true);
+    double gallons = double.parse(_gallonsController.text);
+    double totalCost = double.parse(_costController.text);
     FuelLog log = FuelLog(
       id: generateId(),
       vehicleId: vehicleId,
       date: _date,
       odometer: int.parse(_odometerController.text),
-      gallons: double.parse(_gallonsController.text),
-      totalCost: double.parse(_costController.text),
+      gallons: gallons,
+      totalCost: totalCost,
+      // Se calcula, no se pide en el formulario — evita que quede
+      // inconsistente con costo/galones cargados a mano.
+      pricePerGallon: gallons > 0 ? totalCost / gallons : null,
       isFullTank: _fullTank,
       stationName: _stationController.text.trim().isEmpty
           ? null
@@ -58,9 +63,64 @@ class _RegisterFuelScreenState extends ConsumerState<RegisterFuelScreen> {
     unawaited(Navigator.of(context).maybePop());
   }
 
+  bool get _isToday {
+    DateTime now = DateTime.now();
+    return _date.year == now.year &&
+        _date.month == now.month &&
+        _date.day == now.day;
+  }
+
+  /// Rango válido para el odómetro de este tanqueo, según su fecha y los
+  /// tanqueos vecinos ya guardados (el odómetro nunca retrocede en el
+  /// tiempo):
+  /// - Si hay un tanqueo con fecha anterior/igual, el odómetro no puede ser
+  ///   menor al de ese tanqueo.
+  /// - Si hay un tanqueo con fecha posterior, no puede ser mayor al de ese.
+  /// - Si no hay tanqueo posterior y la fecha es hoy, se trata como el más
+  ///   reciente: debe continuar desde `vehicle.currentOdometer`.
+  /// - Si no hay tanqueo posterior y la fecha es anterior a hoy (ej. el
+  ///   primer tanqueo que se registra, agregado con fecha atrasada), NO se
+  ///   acota con `vehicle.currentOdometer` — ese valor puede ser solo el
+  ///   que se escribió al crear el vehículo (incluso 0, si no se actualizó),
+  ///   no un dato real verificado a esa fecha. Tratarlo como techo bloquea
+  ///   justo el caso de cargar historial atrasado en un vehículo nuevo.
+  ({int? min, int? max}) _odometerBounds(
+    List<FuelLog> logs,
+    int currentOdometer,
+  ) {
+    List<FuelLog> sorted = <FuelLog>[...logs]
+      ..sort((FuelLog a, FuelLog b) => a.date.compareTo(b.date));
+    FuelLog? prev;
+    FuelLog? next;
+    for (FuelLog log in sorted) {
+      if (!log.date.isAfter(_date)) {
+        prev = log;
+      } else {
+        next = log;
+        break;
+      }
+    }
+    int? min = prev?.odometer;
+    int? max = next?.odometer;
+    if (next == null && _isToday) {
+      min = currentOdometer;
+    }
+    return (min: min, max: max);
+  }
+
+  /// El campo "Galones" se bloquea (autocompletado con la capacidad del
+  /// tanque) solo cuando el switch "Tanque lleno" está activo Y el
+  /// vehículo tiene una capacidad registrada — sin ese dato no hay con qué
+  /// autocompletar, así que se deja editable igual.
+  bool _lockGallonsToTankCapacity(Vehicle vehicle) =>
+      _fullTank && vehicle.tankCapacityGallons != null;
+
   @override
   Widget build(BuildContext context) {
     Vehicle? vehicle = ref.watch(selectedVehicleProvider);
+    List<FuelLog> existingLogs = vehicle == null
+        ? const <FuelLog>[]
+        : ref.watch(fuelLogsProvider(vehicle.id)).value ?? const <FuelLog>[];
     return BlueprintScaffold(
       appBar: const BlueprintFormAppBar(title: 'Registrar Tanqueo'),
       body: vehicle == null
@@ -87,8 +147,15 @@ class _RegisterFuelScreenState extends ConsumerState<RegisterFuelScreen> {
                       validator: (String? v) {
                         int? n = int.tryParse(v ?? '');
                         if (n == null) return 'Ingresa un número válido.';
-                        if (n < vehicle.currentOdometer) {
-                          return 'Debe ser ≥ ${vehicle.currentOdometer} km.';
+                        ({int? min, int? max}) bounds = _odometerBounds(
+                          existingLogs,
+                          vehicle.currentOdometer,
+                        );
+                        if (bounds.min != null && n < bounds.min!) {
+                          return 'Debe ser ≥ ${bounds.min} km.';
+                        }
+                        if (bounds.max != null && n > bounds.max!) {
+                          return 'Debe ser ≤ ${bounds.max} km.';
                         }
                         return null;
                       },
@@ -97,6 +164,7 @@ class _RegisterFuelScreenState extends ConsumerState<RegisterFuelScreen> {
                     BlueprintTextField(
                       label: 'Galones',
                       controller: _gallonsController,
+                      enabled: !_lockGallonsToTankCapacity(vehicle),
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
@@ -124,7 +192,17 @@ class _RegisterFuelScreenState extends ConsumerState<RegisterFuelScreen> {
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Tanque lleno'),
                       value: _fullTank,
-                      onChanged: (bool v) => setState(() => _fullTank = v),
+                      onChanged: (bool v) => setState(() {
+                        _fullTank = v;
+                        // Si se conoce la capacidad del tanque, al marcar
+                        // "tanque lleno" se asume que se echó el máximo —
+                        // se autocompleta y se bloquea el campo para que no
+                        // quede una cifra manual inconsistente con el badge.
+                        double? capacity = vehicle.tankCapacityGallons;
+                        if (v && capacity != null) {
+                          _gallonsController.text = capacity.toString();
+                        }
+                      }),
                     ),
                     const SizedBox(height: 16),
                     BlueprintPrimaryButton(

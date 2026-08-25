@@ -1,6 +1,6 @@
+import 'package:auto_log_mi_nave_ota_labs/core/data/repositories/mock/mock.dart';
 import 'package:auto_log_mi_nave_ota_labs/core/enums/enums.dart';
 import 'package:auto_log_mi_nave_ota_labs/core/models/models.dart';
-import 'package:auto_log_mi_nave_ota_labs/data/repositories/mock/mock.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Vehicle _vehicle({String id = '', int odometer = 1000}) => Vehicle(
@@ -13,6 +13,7 @@ Vehicle _vehicle({String id = '', int odometer = 1000}) => Vehicle(
   fuelType: FuelType.gasolinaCorriente,
   currentOdometer: odometer,
   createdAt: DateTime.now(),
+  updatedAt: DateTime.now(),
   color: 'Rojo',
 );
 
@@ -76,6 +77,34 @@ void main() {
       List<FuelLog> logs = await repo.getByVehicle('v1');
       expect(logs.first.odometer, 100);
       expect(logs.last.odometer, 200);
+    });
+
+    test('delete() remueve solo el tanqueo indicado', () async {
+      MockFuelLogRepository repo = MockFuelLogRepository();
+      FuelLog kept = await repo.create(
+        FuelLog(
+          id: '',
+          vehicleId: 'v1',
+          date: DateTime(2026, 1, 1),
+          odometer: 100,
+          gallons: 5,
+          totalCost: 50000,
+        ),
+      );
+      FuelLog removed = await repo.create(
+        FuelLog(
+          id: '',
+          vehicleId: 'v1',
+          date: DateTime(2026, 2, 1),
+          odometer: 200,
+          gallons: 5,
+          totalCost: 50000,
+        ),
+      );
+      await repo.delete(removed.id);
+      List<FuelLog> logs = await repo.getByVehicle('v1');
+      expect(logs, hasLength(1));
+      expect(logs.single.id, kept.id);
     });
   });
 }

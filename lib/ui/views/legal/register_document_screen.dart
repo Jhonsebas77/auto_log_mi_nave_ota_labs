@@ -62,6 +62,8 @@ class _RegisterDocumentScreenState
   }
 
   Future<void> _pickAttachment() async {
+    String? userId = ref.read(authControllerProvider).user?.id;
+    if (userId == null) return;
     String? path = await showModalBottomSheet<String?>(
       context: context,
       builder: (BuildContext context) => SafeArea(
@@ -73,7 +75,7 @@ class _RegisterDocumentScreenState
               onTap: () async {
                 String? p = await ref
                     .read(attachmentPickerServiceProvider)
-                    .pickImageFromCamera();
+                    .pickImageFromCamera(userId: userId, category: 'legal');
                 if (context.mounted) Navigator.pop(context, p);
               },
             ),
@@ -83,7 +85,7 @@ class _RegisterDocumentScreenState
               onTap: () async {
                 String? p = await ref
                     .read(attachmentPickerServiceProvider)
-                    .pickImageFromGallery();
+                    .pickImageFromGallery(userId: userId, category: 'legal');
                 if (context.mounted) Navigator.pop(context, p);
               },
             ),
@@ -93,7 +95,7 @@ class _RegisterDocumentScreenState
               onTap: () async {
                 String? p = await ref
                     .read(attachmentPickerServiceProvider)
-                    .pickPdf();
+                    .pickPdf(userId: userId, category: 'legal');
                 if (context.mounted) Navigator.pop(context, p);
               },
             ),

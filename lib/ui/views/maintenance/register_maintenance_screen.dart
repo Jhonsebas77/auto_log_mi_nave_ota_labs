@@ -39,9 +39,11 @@ class _RegisterMaintenanceScreenState
   }
 
   Future<void> _pickInvoice() async {
+    String? userId = ref.read(authControllerProvider).user?.id;
+    if (userId == null) return;
     String? path = await ref
         .read(attachmentPickerServiceProvider)
-        .pickImageFromCamera();
+        .pickImageFromCamera(userId: userId, category: 'maintenance');
     if (path != null) setState(() => _invoicePath = path);
   }
 

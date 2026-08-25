@@ -11,6 +11,7 @@ class BlueprintTextField extends StatelessWidget {
     this.textInputAction,
     this.validator,
     this.readOnly = false,
+    this.enabled = true,
     this.onTap,
     this.onChanged,
     this.onFieldSubmitted,
@@ -27,6 +28,7 @@ class BlueprintTextField extends StatelessWidget {
   final TextInputAction? textInputAction;
   final String? Function(String?)? validator;
   final bool readOnly;
+  final bool enabled;
   final VoidCallback? onTap;
   final void Function(String)? onChanged;
   final void Function(String)? onFieldSubmitted;
@@ -43,6 +45,7 @@ class BlueprintTextField extends StatelessWidget {
     textInputAction: textInputAction,
     validator: validator,
     readOnly: readOnly,
+    enabled: enabled,
     onTap: onTap,
     onChanged: onChanged,
     onFieldSubmitted: onFieldSubmitted,

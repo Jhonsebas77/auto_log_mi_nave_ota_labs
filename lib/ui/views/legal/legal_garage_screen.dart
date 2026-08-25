@@ -39,7 +39,13 @@ class _LegalGarageScreenState extends ConsumerState<LegalGarageScreen>
                   'esta demo).',
                 ),
               )
-            : Image(image: attachmentImageProvider(path)),
+            : Image(
+                image: attachmentImageProvider(path),
+                errorBuilder: (_, __, ___) => const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Text('No fue posible cargar la imagen adjunta.'),
+                ),
+              ),
       ),
     );
   }

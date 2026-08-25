@@ -21,6 +21,7 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
   late final TextEditingController _modelController;
   late final TextEditingController _yearController;
   late final TextEditingController _odometerController;
+  late final TextEditingController _tankCapacityController;
   late FuelType _fuelType;
   late String _color;
   String? _photoPath;
@@ -48,6 +49,9 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
     _odometerController = TextEditingController(
       text: vehicle?.currentOdometer.toString(),
     );
+    _tankCapacityController = TextEditingController(
+      text: vehicle?.tankCapacityGallons?.toString() ?? '',
+    );
     _fuelType = vehicle?.fuelType ?? FuelType.gasolinaCorriente;
     // vehicle.color puede venir en formato legacy (label como 'Rojo', ver
     // colorSwatchForVehicle) — se normaliza a hex para que el picker
@@ -68,10 +72,13 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
     _modelController.dispose();
     _yearController.dispose();
     _odometerController.dispose();
+    _tankCapacityController.dispose();
     super.dispose();
   }
 
   Future<void> _pickPhoto() async {
+    String? userId = ref.read(authControllerProvider).user?.id;
+    if (userId == null) return;
     String? path = await showModalBottomSheet<String?>(
       context: context,
       builder: (BuildContext context) => SafeArea(
@@ -83,7 +90,7 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
               onTap: () async {
                 String? p = await ref
                     .read(attachmentPickerServiceProvider)
-                    .pickImageFromCamera();
+                    .pickImageFromCamera(userId: userId, category: 'vehicle');
                 if (context.mounted) Navigator.pop(context, p);
               },
             ),
@@ -93,7 +100,7 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
               onTap: () async {
                 String? p = await ref
                     .read(attachmentPickerServiceProvider)
-                    .pickImageFromGallery();
+                    .pickImageFromGallery(userId: userId, category: 'vehicle');
                 if (context.mounted) Navigator.pop(context, p);
               },
             ),
@@ -119,6 +126,7 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
       color: _color,
       photoUrl: _photoPath,
       nickname: _nicknameController.text.trim(),
+      tankCapacityGallons: double.tryParse(_tankCapacityController.text),
     );
     await ref.read(vehiclesProvider.notifier).updateVehicle(updated);
     if (!mounted) return;
@@ -207,6 +215,19 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
                 validator: (String? v) => int.tryParse(v ?? '') == null
                     ? 'Ingresa un número válido.'
                     : null,
+              ),
+              const SizedBox(height: 16),
+              BlueprintTextField(
+                label: 'Capacidad del tanque (galones, opcional)',
+                controller: _tankCapacityController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                validator: (String? v) => (v == null || v.trim().isEmpty)
+                    ? null
+                    : (double.tryParse(v) == null
+                          ? 'Ingresa un número válido.'
+                          : null),
               ),
               const SizedBox(height: 16),
               const Text('Color', style: AppTextStyles.bodySmall),

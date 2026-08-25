@@ -86,6 +86,16 @@ class AuthController extends Notifier<AuthState> {
 
   /// Pide permiso de notificaciones (una vez, en contexto tras el primer
   /// login/restauración exitosa) y reconcilia los recordatorios pendientes.
+  ///
+  /// A propósito NO dispara acá una carga explícita de `vehiclesProvider`:
+  /// `VehiclesNotifier.build()` ya hace `ref.watch(authControllerProvider)`,
+  /// así que se recarga solo en cuanto cambia el estado de auth — intentar
+  /// leerlo desde este controller (que es justo de quien depende) revienta
+  /// con `CircularDependencyError`, sin importar si el `read` se hace en el
+  /// acto o diferido a un microtask/Future. El primer consumidor real
+  /// (el dashboard, vía `ref.watch(vehiclesProvider)`) es quien dispara el
+  /// fetch, ya con el `userId` correcto porque a esa altura el estado de
+  /// auth ya está resuelto.
   Future<void> _afterAuthenticated() async {
     await ref.read(notificationServiceProvider).requestPermissions();
     bool notificationsEnabled = ref

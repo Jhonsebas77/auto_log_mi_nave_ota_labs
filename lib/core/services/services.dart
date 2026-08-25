@@ -1,18 +1,16 @@
 library com.auto_log_mi_nave_ota_labs.app.services;
 
-import 'dart:io';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
-import '../../data/repositories/repositories.dart';
 import '../constants/constants.dart';
+import '../data/repositories/repositories.dart';
 import '../enums/enums.dart';
 import '../models/models.dart';
 import '../utils/utils.dart';

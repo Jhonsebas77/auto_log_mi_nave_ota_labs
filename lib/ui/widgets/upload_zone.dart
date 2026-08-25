@@ -40,6 +40,14 @@ class UploadZone extends StatelessWidget {
                         width: 48,
                         height: 48,
                         fit: BoxFit.cover,
+                        // Adjuntos viejos guardados como ruta local (antes de
+                        // subir a Supabase Storage) pueden ya no existir en
+                        // disco — se muestra un ícono en vez de crashear.
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.broken_image_outlined,
+                          color: BlueprintColors.textMuted,
+                          size: 32,
+                        ),
                       ),
                     )
                   else
@@ -79,10 +87,6 @@ class UploadZone extends StatelessWidget {
   }
 
   bool _isImage(String path) {
-    // En web solo se puede elegir foto (cámara/galería) por ahora — pickPdf
-    // retorna null en esa plataforma — y la ruta es una blob URL sin
-    // extensión de archivo, así que siempre se trata como imagen.
-    if (kIsWeb) return true;
     String lower = path.toLowerCase();
     return lower.endsWith('.png') ||
         lower.endsWith('.jpg') ||

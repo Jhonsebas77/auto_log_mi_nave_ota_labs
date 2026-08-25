@@ -77,14 +77,13 @@ class LicensePlateRestrictionCard extends StatelessWidget {
           const SizedBox(height: 16),
           const Divider(color: BlueprintColors.outlineVariant, height: 1),
           const SizedBox(height: 16),
+          _PicoYPlacaMetric(
+            label: 'FRANJA',
+            value: rule?.horarioLabel ?? '-',
+          ),
+          const SizedBox(height: 12),
           Row(
             children: <Widget>[
-              Expanded(
-                child: _PicoYPlacaMetric(
-                  label: 'FRANJA',
-                  value: rule?.horarioLabel ?? '-',
-                ),
-              ),
               Expanded(
                 child: _PicoYPlacaMetric(
                   label: 'DÍGITO',

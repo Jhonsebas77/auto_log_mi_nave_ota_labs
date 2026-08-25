@@ -8,10 +8,7 @@ final Provider<SeedData> seedDataProvider = Provider<SeedData>(
 );
 
 final Provider<VehicleRepository> vehicleRepositoryProvider =
-    Provider<VehicleRepository>((Ref ref) {
-      SeedData seed = ref.watch(seedDataProvider);
-      return MockVehicleRepository(seed: <Vehicle>[seed.vehicle]);
-    });
+    Provider<VehicleRepository>((Ref ref) => SupabaseVehicleRepository());
 
 final Provider<LegalDocumentRepository> legalDocumentRepositoryProvider =
     Provider<LegalDocumentRepository>((Ref ref) {
@@ -20,10 +17,7 @@ final Provider<LegalDocumentRepository> legalDocumentRepositoryProvider =
     });
 
 final Provider<FuelLogRepository> fuelLogRepositoryProvider =
-    Provider<FuelLogRepository>((Ref ref) {
-      SeedData seed = ref.watch(seedDataProvider);
-      return MockFuelLogRepository(seed: seed.fuelLogs);
-    });
+    Provider<FuelLogRepository>((Ref ref) => SupabaseFuelLogRepository());
 
 final Provider<MaintenanceRepository> maintenanceRepositoryProvider =
     Provider<MaintenanceRepository>((Ref ref) {

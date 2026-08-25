@@ -1,5 +1,5 @@
-import '../../core/enums/enums.dart';
-import '../../core/models/models.dart';
+import '../../enums/enums.dart';
+import '../../models/models.dart';
 
 /// Conjunto de datos demo para que la app sea usable inmediatamente tras
 /// `flutter run`, sin configuración manual. Todas las fechas se calculan
@@ -47,7 +47,9 @@ SeedData buildSeedData(DateTime now) {
     fuelType: FuelType.gasolinaCorriente,
     currentOdometer: 42180,
     createdAt: now.subtract(const Duration(days: 400)),
+    updatedAt: now.subtract(const Duration(days: 400)),
     color: 'Rojo',
+    tankCapacityGallons: 14.5,
   );
 
   List<FuelLog> fuelLogs = <FuelLog>[
