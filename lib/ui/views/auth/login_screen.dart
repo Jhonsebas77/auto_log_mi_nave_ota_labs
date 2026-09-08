@@ -9,6 +9,8 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  static const Logger _log = Logger('LoginScreen');
+
   final TextEditingController _emailController = TextEditingController(
     text: hardcodedEmail,
   );
@@ -80,6 +82,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (error == null) {
       showSuccessSnackBar(context, 'Login successfully');
     } else {
+      _log.error('_login: $error');
       setState(() => _errorMsg = error);
       showErrorSnackBar(context, error);
     }

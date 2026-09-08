@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:recase/recase.dart';
 import 'package:uuid/uuid.dart';
 
 import '../constants/constants.dart';
@@ -17,3 +18,4 @@ part 'formats.dart';
 part 'fuel_metrics_calculator.dart';
 part 'id_generator.dart';
 part 'lifespan_calculator.dart';
+part 'logger.dart';

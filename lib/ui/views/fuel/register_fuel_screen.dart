@@ -70,10 +70,10 @@ class _RegisterFuelScreenState extends ConsumerState<RegisterFuelScreen> {
         _date.day == now.day;
   }
 
-  /// Rango válido para el odómetro de este tanqueo, según su fecha y los
-  /// tanqueos vecinos ya guardados (el odómetro nunca retrocede en el
+  /// Rango válido para el Odómetro de este tanqueo, según su fecha y los
+  /// tanqueos vecinos ya guardados (el Odómetro nunca retrocede en el
   /// tiempo):
-  /// - Si hay un tanqueo con fecha anterior/igual, el odómetro no puede ser
+  /// - Si hay un tanqueo con fecha anterior/igual, el Odómetro no puede ser
   ///   menor al de ese tanqueo.
   /// - Si hay un tanqueo con fecha posterior, no puede ser mayor al de ese.
   /// - Si no hay tanqueo posterior y la fecha es hoy, se trata como el más
@@ -107,13 +107,6 @@ class _RegisterFuelScreenState extends ConsumerState<RegisterFuelScreen> {
     }
     return (min: min, max: max);
   }
-
-  /// El campo "Galones" se bloquea (autocompletado con la capacidad del
-  /// tanque) solo cuando el switch "Tanque lleno" está activo Y el
-  /// vehículo tiene una capacidad registrada — sin ese dato no hay con qué
-  /// autocompletar, así que se deja editable igual.
-  bool _lockGallonsToTankCapacity(Vehicle vehicle) =>
-      _fullTank && vehicle.tankCapacityGallons != null;
 
   @override
   Widget build(BuildContext context) {
@@ -164,7 +157,6 @@ class _RegisterFuelScreenState extends ConsumerState<RegisterFuelScreen> {
                     BlueprintTextField(
                       label: 'Galones',
                       controller: _gallonsController,
-                      enabled: !_lockGallonsToTankCapacity(vehicle),
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
@@ -191,18 +183,12 @@ class _RegisterFuelScreenState extends ConsumerState<RegisterFuelScreen> {
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Tanque lleno'),
+                      subtitle: const Text(
+                        'Marca esto solo si el tanque quedó realmente lleno '
+                        'al terminar de tanquear.',
+                      ),
                       value: _fullTank,
-                      onChanged: (bool v) => setState(() {
-                        _fullTank = v;
-                        // Si se conoce la capacidad del tanque, al marcar
-                        // "tanque lleno" se asume que se echó el máximo —
-                        // se autocompleta y se bloquea el campo para que no
-                        // quede una cifra manual inconsistente con el badge.
-                        double? capacity = vehicle.tankCapacityGallons;
-                        if (v && capacity != null) {
-                          _gallonsController.text = capacity.toString();
-                        }
-                      }),
+                      onChanged: (bool v) => setState(() => _fullTank = v),
                     ),
                     const SizedBox(height: 16),
                     BlueprintPrimaryButton(

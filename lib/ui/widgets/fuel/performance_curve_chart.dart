@@ -16,7 +16,7 @@ class PerformanceCurveChart extends StatelessWidget {
           border: Border.all(color: BlueprintColors.outlineVariant),
         ),
         child: const Text(
-          'Registra al menos 2 tanqueos llenos para ver la curva.',
+          'Registra al menos 3 tanqueos llenos para ver la curva.',
           textAlign: TextAlign.center,
           style: AppTextStyles.bodySmall,
         ),

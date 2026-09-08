@@ -114,16 +114,32 @@ class _VehicleBackground extends StatelessWidget {
       return Image(
         image: attachmentImageProvider(photoUrl),
         fit: BoxFit.cover,
-        // Fotos viejas guardadas como ruta local (antes de subir a Supabase
-        // Storage) pueden ya no existir en disco — cae al mismo respaldo de
-        // color/ícono en vez de crashear.
+        loadingBuilder:
+            (
+              BuildContext context,
+              Widget child,
+              ImageChunkEvent? loadingProgress,
+            ) {
+              if (loadingProgress == null) return child;
+              return _fallbackBackground(
+                vehicle.color,
+                child: const SizedBox(
+                  width: 32,
+                  height: 32,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: Colors.white,
+                  ),
+                ),
+              );
+            },
         errorBuilder: (_, __, ___) => _fallbackBackground(vehicle.color),
       );
     }
     return _fallbackBackground(vehicle.color);
   }
 
-  Widget _fallbackBackground(String color) {
+  Widget _fallbackBackground(String color, {Widget? child}) {
     Color swatch = colorSwatchForVehicle(color);
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -137,11 +153,13 @@ class _VehicleBackground extends StatelessWidget {
         ),
       ),
       child: Center(
-        child: Icon(
-          Icons.directions_car,
-          size: 120,
-          color: Colors.white.withValues(alpha: 0.25),
-        ),
+        child:
+            child ??
+            Icon(
+              Icons.directions_car,
+              size: 120,
+              color: Colors.white.withValues(alpha: 0.25),
+            ),
       ),
     );
   }

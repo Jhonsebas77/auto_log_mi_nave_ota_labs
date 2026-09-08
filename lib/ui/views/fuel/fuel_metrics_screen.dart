@@ -1,10 +1,17 @@
 part of com.auto_log_mi_nave_ota_labs.app.ui.views;
 
-class FuelMetricsScreen extends ConsumerWidget {
+class FuelMetricsScreen extends ConsumerStatefulWidget {
   const FuelMetricsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<FuelMetricsScreen> createState() => _FuelMetricsScreenState();
+}
+
+class _FuelMetricsScreenState extends ConsumerState<FuelMetricsScreen> {
+  bool _sortDescending = true;
+
+  @override
+  Widget build(BuildContext context) {
     Vehicle? vehicle = ref.watch(selectedVehicleProvider);
     if (vehicle == null) {
       return const Center(
@@ -43,15 +50,77 @@ class FuelMetricsScreen extends ConsumerWidget {
                     const SizedBox(height: 16),
                     KpiCardsRow(metrics: metrics),
                     const SizedBox(height: 16),
-                    const Text('Historial', style: AppTextStyles.titleMedium),
+                    Row(
+                      children: <Widget>[
+                        const Text(
+                          'Historial',
+                          style: AppTextStyles.titleMedium,
+                        ),
+                        const Spacer(),
+                        _SortHistoryButton(
+                          descending: _sortDescending,
+                          onChanged: (bool value) =>
+                              setState(() => _sortDescending = value),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 8),
-                    FuelHistoryList(logs: logs),
+                    FuelHistoryList(
+                      logs: logs,
+                      sortDescending: _sortDescending,
+                    ),
                   ],
                 ),
               ),
       ),
     );
   }
+}
+
+class _SortHistoryButton extends StatelessWidget {
+  const _SortHistoryButton({required this.descending, required this.onChanged});
+
+  final bool descending;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) => PopupMenuButton<bool>(
+    tooltip: 'Ordenar historial',
+    initialValue: descending,
+    onSelected: onChanged,
+    icon: const Icon(Icons.sort, color: BlueprintColors.textMuted),
+    itemBuilder: (BuildContext context) => <PopupMenuEntry<bool>>[
+      _sortMenuItem(
+        value: true,
+        label: 'Más reciente primero',
+        selected: descending,
+      ),
+      _sortMenuItem(
+        value: false,
+        label: 'Más antigua primero',
+        selected: !descending,
+      ),
+    ],
+  );
+
+  PopupMenuItem<bool> _sortMenuItem({
+    required bool value,
+    required String label,
+    required bool selected,
+  }) => PopupMenuItem<bool>(
+    value: value,
+    child: Row(
+      children: <Widget>[
+        Icon(
+          selected ? Icons.check : null,
+          size: 18,
+          color: BlueprintColors.textMuted,
+        ),
+        const SizedBox(width: 8),
+        Text(label),
+      ],
+    ),
+  );
 }
 
 /// Estado vacío: sin tanqueos todavía no hay nada que graficar ni promediar

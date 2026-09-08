@@ -24,7 +24,7 @@ MaintenanceLifespanCategory? _categoryForRecord(MaintenanceRecord record) {
 
 /// Calcula el progreso de vida útil (Aceite/Llantas/Frenos) del vehículo:
 /// busca el registro más reciente que matchee cada categoría por palabra
-/// clave y compara contra el odómetro actual.
+/// clave y compara contra el Odómetro actual.
 List<LifespanStatus> calculateLifespans({
   required List<MaintenanceRecord> records,
   required int currentOdometer,

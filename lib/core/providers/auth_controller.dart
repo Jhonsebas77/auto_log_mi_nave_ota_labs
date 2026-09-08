@@ -1,13 +1,20 @@
 part of com.auto_log_mi_nave_ota_labs.app.core.providers;
 
 class AuthState {
-  const AuthState({required this.status, this.user});
+  const AuthState({required this.status, this.user, this.errorMessage});
 
   factory AuthState.authenticated(AppUser user) =>
       AuthState(status: AuthStatus.authenticated, user: user);
 
+  /// Sesión cerrada porque no se pudo validar (ej. falla de red al refrescar
+  /// el token) en vez de un logout explícito del usuario — `errorMessage` se
+  /// muestra una sola vez, vía snackbar, en `AuthGate`.
+  factory AuthState.unauthenticatedWithError(String errorMessage) =>
+      AuthState(status: AuthStatus.unauthenticated, errorMessage: errorMessage);
+
   final AuthStatus status;
   final AppUser? user;
+  final String? errorMessage;
 
   static const AuthState unknown = AuthState(status: AuthStatus.unknown);
   static const AuthState unauthenticated = AuthState(
@@ -17,6 +24,8 @@ class AuthState {
   /// Igualdad estructural (por `status` + `user.id`): evita que Riverpod
   /// notifique un rebuild cuando el listener de Supabase reemite el mismo
   /// estado que ya teníamos (ver comentario en `_handleAuthStateChange`).
+  /// `errorMessage` queda fuera a propósito: es un aviso de una sola vez,
+  /// no parte del estado de auth en sí.
   @override
   bool operator ==(Object other) =>
       other is AuthState &&
@@ -35,6 +44,8 @@ class AuthState {
 /// Nota: los tipos de `supabase_flutter` se usan con el prefijo `sb.` porque
 /// el paquete define su propia clase `AuthState`, que choca con la de arriba.
 class AuthController extends Notifier<AuthState> {
+  static const Logger _log = Logger('AuthController');
+
   sb.GoTrueClient get _auth => sb.Supabase.instance.client.auth;
 
   @override
@@ -47,7 +58,7 @@ class AuthController extends Notifier<AuthState> {
     // ese momento) — se suscribe explícitamente aquí, cancelando al
     // disponer el provider.
     StreamSubscription<sb.AuthState> subscription = _auth.onAuthStateChange
-        .listen(_handleAuthStateChange);
+        .listen(_handleAuthStateChange, onError: _handleAuthStateError);
     ref.onDispose(subscription.cancel);
 
     sb.Session? session = _auth.currentSession;
@@ -74,6 +85,40 @@ class AuthController extends Notifier<AuthState> {
           : AuthState.authenticated(_toAppUser(session.user));
     });
   }
+
+  /// GoTrue emite un error por este stream cuando el refresh automático del
+  /// token falla de forma "retryable" (típicamente
+  /// `AuthRetryableFetchException` por no poder alcanzar Supabase, ej. sin
+  /// internet) — a diferencia de un refresh token inválido, en ese caso
+  /// GoTrue NO cierra la sesión por su cuenta (sigue reintentando en el
+  /// siguiente tick), así que sin este handler el error queda sin capturar
+  /// y revienta la app.
+  ///
+  /// Como no hay red para confirmar si el token sigue siendo válido, no
+  /// tiene sentido dejar al usuario en un estado "autenticado" que no se
+  /// puede verificar: se cierra la sesión localmente y se avisa con un
+  /// mensaje (mostrado una vez, vía `AuthGate`) para que vuelva a iniciar
+  /// sesión cuando tenga conexión.
+  void _handleAuthStateError(Object error, StackTrace stackTrace) {
+    _log.error('onAuthStateChange error: $error');
+    Future<void>.microtask(() async {
+      state = AuthState.unauthenticatedWithError(_authErrorMessage(error));
+      try {
+        // Ya se marcó el estado local como no autenticado arriba; este
+        // signOut solo intenta avisarle a Supabase, y sin red va a fallar
+        // de la misma forma (AuthRetryableFetchException) — se ignora.
+        await _auth.signOut(scope: sb.SignOutScope.local);
+      } catch (_) {
+        // No hay nada más que hacer sin conexión: lo local ya quedó limpio.
+      }
+    });
+  }
+
+  String _authErrorMessage(Object error) =>
+      error is sb.AuthRetryableFetchException
+      ? 'No se pudo validar tu sesión por falta de conexión. '
+            'Inicia sesión de nuevo cuando tengas internet.'
+      : 'Tu sesión expiró o no se pudo validar. Inicia sesión de nuevo.';
 
   AppUser _toAppUser(sb.User user) => AppUser(
     id: user.id,
@@ -127,11 +172,12 @@ class AuthController extends Notifier<AuthState> {
       await _afterAuthenticated();
       return null;
     } on sb.AuthException catch (e) {
-      return e.statusCode == '400'
-          ? 'Correo o contraseña incorrectos.'
-          : e.message;
+      if (e.statusCode == '400') return 'Correo o contraseña incorrectos.';
+      _log.error('login: ${e.message}');
+      return 'Lo sentimos, hubo un error.';
     } catch (e) {
-      return 'Ocurrió un error inesperado. Intenta de nuevo.';
+      _log.error('login: $e');
+      return 'Lo sentimos, hubo un error.';
     }
   }
 

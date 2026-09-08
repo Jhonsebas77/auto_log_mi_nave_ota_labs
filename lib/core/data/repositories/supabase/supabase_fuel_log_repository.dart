@@ -5,21 +5,24 @@ class SupabaseFuelLogRepository implements FuelLogRepository {
   /// tablas de la app viven en el schema `auto_log`, no en `public` — debe
   /// estar en la lista de "Exposed schemas" del proyecto (ya debería estarlo
   /// desde la migración de vehicles). Ver `supabase/sql/0003_fuel_logs.sql`.
-  SupabaseQuerySchema get _schema => Supabase.instance.client.schema(
-    'auto_log',
-  );
+  SupabaseQuerySchema get _schema =>
+      Supabase.instance.client.schema('auto_log');
 
   @override
   Future<List<FuelLog>> getByVehicle(String vehicleId) async {
     // El orden ascendente por fecha es requerido: calculateFuelMetrics()
     // asume esta ordenación para calcular km/gal entre pares consecutivos
     // de tanque lleno (mismo comportamiento que ya garantiza
-    // MockFuelLogRepository.getByVehicle).
+    // MockFuelLogRepository.getByVehicle). `ascending` hay que pasarlo
+    // explícito: en postgrest-dart 2.x el default de `.order()` es
+    // `ascending: false` (descendente) — sin esto la lista llegaba más
+    // reciente primero, invirtiendo tanto el cálculo de métricas como
+    // cualquier orden que se pida en el historial.
     List<Map<String, dynamic>> rows = await _schema
         .from('fuel_logs')
         .select()
         .eq('vehicle_id', vehicleId)
-        .order('date');
+        .order('date', ascending: true);
     return rows.map(FuelLog.fromJson).toList(growable: false);
   }
 

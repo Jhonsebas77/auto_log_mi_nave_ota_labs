@@ -8,6 +8,8 @@ part of com.auto_log_mi_nave_ota_labs.app.ui.views;
 class AuthGate extends ConsumerWidget {
   const AuthGate({super.key});
 
+  static const Logger _log = Logger('AuthGate');
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.listen<AuthState>(authControllerProvider, (
@@ -23,6 +25,15 @@ class AuthGate extends ConsumerWidget {
         Navigator.of(
           context,
         ).popUntil((Route<dynamic> route) => route.isFirst);
+      }
+
+      // Sesión cerrada por el propio AuthController (ej. no se pudo
+      // refrescar el token por falta de conexión), no por un logout manual
+      // del usuario: avisar con un snackbar antes de caer al login.
+      String? errorMessage = next.errorMessage;
+      if (errorMessage != null) {
+        _log.error('authControllerProvider: $errorMessage');
+        showErrorSnackBar(context, errorMessage);
       }
     });
 
