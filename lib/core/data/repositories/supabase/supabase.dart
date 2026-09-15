@@ -6,4 +6,5 @@ import '../../../models/models.dart';
 import '../repositories.dart';
 
 part 'supabase_fuel_log_repository.dart';
+part 'supabase_legal_document_repository.dart';
 part 'supabase_vehicle_repository.dart';
