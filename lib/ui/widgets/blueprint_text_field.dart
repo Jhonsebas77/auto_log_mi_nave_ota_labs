@@ -18,6 +18,7 @@ class BlueprintTextField extends StatelessWidget {
     this.suffixIcon,
     this.textCapitalization = TextCapitalization.none,
     this.maxLength,
+    this.maxLines = 1,
   });
 
   final String label;
@@ -35,6 +36,7 @@ class BlueprintTextField extends StatelessWidget {
   final Widget? suffixIcon;
   final TextCapitalization textCapitalization;
   final int? maxLength;
+  final int? maxLines;
 
   @override
   Widget build(BuildContext context) => TextFormField(
@@ -51,6 +53,7 @@ class BlueprintTextField extends StatelessWidget {
     onFieldSubmitted: onFieldSubmitted,
     textCapitalization: textCapitalization,
     maxLength: maxLength,
+    maxLines: maxLines,
     style: AppTextStyles.bodyLarge,
     decoration: InputDecoration(label: Text(label), suffixIcon: suffixIcon),
   );

@@ -12,6 +12,7 @@ class LegalDocument {
     this.entityName,
     this.documentUrl,
     this.notes,
+    this.documentNumber,
   });
   final String id;
   final String vehicleId;
@@ -22,6 +23,7 @@ class LegalDocument {
   final String? entityName;
   final String? documentUrl;
   final String? notes;
+  final String? documentNumber;
 
   LegalDocument copyWith({
     String? id,
@@ -33,6 +35,7 @@ class LegalDocument {
     String? entityName,
     String? documentUrl,
     String? notes,
+    String? documentNumber,
   }) => LegalDocument(
     id: id ?? this.id,
     vehicleId: vehicleId ?? this.vehicleId,
@@ -43,5 +46,6 @@ class LegalDocument {
     entityName: entityName ?? this.entityName,
     documentUrl: documentUrl ?? this.documentUrl,
     notes: notes ?? this.notes,
+    documentNumber: documentNumber ?? this.documentNumber,
   );
 }

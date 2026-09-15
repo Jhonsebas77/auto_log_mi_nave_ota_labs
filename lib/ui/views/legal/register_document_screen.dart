@@ -18,15 +18,18 @@ class _RegisterDocumentScreenState
   DateTime _expirationDate = DateTime.now().add(const Duration(days: 365));
   final TextEditingController _entityController = TextEditingController();
   final TextEditingController _costController = TextEditingController();
+  final TextEditingController _documentNumberController =
+      TextEditingController();
+  final TextEditingController _notesController = TextEditingController();
   String? _attachmentPath;
-  bool _scanning = false;
   bool _saving = false;
-  bool _wasScanned = false;
 
   @override
   void dispose() {
     _entityController.dispose();
     _costController.dispose();
+    _documentNumberController.dispose();
+    _notesController.dispose();
     super.dispose();
   }
 
@@ -44,20 +47,6 @@ class _RegisterDocumentScreenState
       } else {
         _issueDate = picked;
       }
-    });
-  }
-
-  Future<void> _runOcr() async {
-    setState(() => _scanning = true);
-    DocumentOcrResult result = await ref
-        .read(ocrSimulationServiceProvider)
-        .scanDocument(_type, now: DateTime.now());
-    if (!mounted) return;
-    setState(() {
-      _scanning = false;
-      _wasScanned = true;
-      _entityController.text = result.entityName;
-      _expirationDate = result.expirationDate;
     });
   }
 
@@ -119,6 +108,12 @@ class _RegisterDocumentScreenState
           ? null
           : _entityController.text.trim(),
       documentUrl: _attachmentPath,
+      documentNumber: _documentNumberController.text.trim().isEmpty
+          ? null
+          : _documentNumberController.text.trim(),
+      notes: _notesController.text.trim().isEmpty
+          ? null
+          : _notesController.text.trim(),
     );
     await ref.read(legalDocumentActionsProvider).create(document);
     if (!mounted) return;
@@ -153,16 +148,6 @@ class _RegisterDocumentScreenState
                         setState(() => _type = t ?? _type),
                   ),
                   const SizedBox(height: 16),
-                  OcrScanButton(loading: _scanning, onTap: _runOcr),
-                  if (_wasScanned)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 4),
-                      child: Text(
-                        'Campos autocompletados (simulado).',
-                        style: AppTextStyles.bodySmall,
-                      ),
-                    ),
-                  const SizedBox(height: 16),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Fecha de expedición (opcional)'),
@@ -188,11 +173,22 @@ class _RegisterDocumentScreenState
                   ),
                   const SizedBox(height: 16),
                   BlueprintTextField(
+                    label: '# de documento (opcional)',
+                    controller: _documentNumberController,
+                  ),
+                  const SizedBox(height: 16),
+                  BlueprintTextField(
                     label: 'Costo (opcional)',
                     controller: _costController,
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                  BlueprintTextField(
+                    label: 'Información adicional (opcional)',
+                    controller: _notesController,
+                    maxLines: 3,
                   ),
                   const SizedBox(height: 16),
                   UploadZone(filePath: _attachmentPath, onTap: _pickAttachment),

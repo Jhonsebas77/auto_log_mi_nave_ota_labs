@@ -32,6 +32,16 @@ class LegalDocumentActions {
         .rescheduleForDocument(created, now: DateTime.now());
   }
 
+  Future<void> update(LegalDocument document) async {
+    LegalDocument updated = await _ref
+        .read(legalDocumentRepositoryProvider)
+        .update(document);
+    _ref.invalidate(legalDocumentsProvider(document.vehicleId));
+    await _ref
+        .read(notificationReconcilerProvider)
+        .rescheduleForDocument(updated, now: DateTime.now());
+  }
+
   Future<void> delete(LegalDocument document) async {
     await _ref.read(legalDocumentRepositoryProvider).delete(document.id);
     _ref.invalidate(legalDocumentsProvider(document.vehicleId));

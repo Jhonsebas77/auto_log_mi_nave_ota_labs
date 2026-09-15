@@ -40,6 +40,7 @@ part 'fuel/performance_curve_chart.dart';
 part 'full_tank_badge.dart';
 part 'kpi_card.dart';
 part 'legal/document_expiration_countdown.dart';
+part 'legal/document_preview_dialog.dart';
 part 'lifespan_bar.dart';
 part 'maintenance/lifespan_bar_group.dart';
 part 'maintenance/service_history_segmented_list.dart';

@@ -25,6 +25,7 @@ part 'dashboard/dashboard_screen.dart';
 part 'fuel/fuel_metrics_screen.dart';
 part 'fuel/register_fuel_screen.dart';
 part 'home/app_home.dart';
+part 'legal/document_detail_screen.dart';
 part 'legal/legal_garage_screen.dart';
 part 'legal/register_document_screen.dart';
 part 'maintenance/maintenance_screen.dart';

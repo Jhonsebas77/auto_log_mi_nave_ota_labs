@@ -24,9 +24,17 @@ class CountdownChip extends StatelessWidget {
 
   String get _label {
     int days = _daysLeft;
-    if (days < 0) return 'Vencido hace ${-days}d';
     if (days == 0) return 'Vence hoy';
-    return 'Vence en ${days}d';
+    if (days < 0) return 'Vencido hace ${_yearsOrDays(-days)}';
+    return 'Vence en ${_yearsOrDays(days)}';
+  }
+
+  /// Más de 365 días (un año) se muestran como años en vez de días, para
+  /// que un vencimiento lejano no se lea como "en 800d".
+  String _yearsOrDays(int days) {
+    if (days <= 365) return '${days}d';
+    int years = days ~/ 365;
+    return years == 1 ? '1 año' : '$years años';
   }
 
   @override
