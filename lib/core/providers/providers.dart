@@ -15,7 +15,6 @@ import '../services/services.dart';
 import '../utils/utils.dart';
 
 part 'auth_controller.dart';
-part 'dashboard_providers.dart';
 part 'fuel_providers.dart';
 part 'home_providers.dart';
 part 'legal_document_providers.dart';

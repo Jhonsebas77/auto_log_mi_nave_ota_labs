@@ -39,8 +39,16 @@ class DashboardScreen extends ConsumerWidget {
         }
 
         Vehicle selected = ref.watch(selectedVehicleProvider) ?? vehicles.first;
-        LicensePlateRestrictionResult picoYPlaca = ref.watch(
-          picoYPlacaTodayProvider(selected.licensePlate),
+        // Se calcula directo (no vía un Provider cacheado): "hoy" depende
+        // del reloj, no de ningún estado de la app, y AppShell mantiene el
+        // dashboard montado en un IndexedStack — un Provider.family aquí
+        // congelaría el resultado del primer build del día y nunca se
+        // volvería a evaluar aunque cambiara la fecha mientras la app
+        // sigue abierta (ver también DocumentStatusRow/CountdownChip, que
+        // por el mismo motivo llaman DateTime.now() directo en el build).
+        LicensePlateRestrictionResult picoYPlaca = isVehicleRestrictedToday(
+          licensePlate: selected.licensePlate,
+          today: DateTime.now(),
         );
         List<LegalDocument> documents =
             ref.watch(legalDocumentsProvider(selected.id)).value ??

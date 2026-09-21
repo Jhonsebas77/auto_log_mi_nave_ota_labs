@@ -34,6 +34,7 @@ part 'dashboard/license_plate_restriction_card.dart';
 part 'dashboard/license_plate_restriction_schedule_sheet.dart';
 part 'dashboard/odometer_quick_update_card.dart';
 part 'dashboard/vehicle_selector.dart';
+part 'divider.dart';
 part 'fuel/fuel_history_list.dart';
 part 'fuel/kpi_cards_row.dart';
 part 'fuel/performance_curve_chart.dart';

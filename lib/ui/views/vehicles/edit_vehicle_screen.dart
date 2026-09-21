@@ -170,6 +170,23 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
                     : null,
               ),
               const SizedBox(height: 16),
+              const CustomDivider(
+                color: BlueprintColors.outlineVariant,
+                thickness: 1,
+                isDash: true,
+              ),
+              const SizedBox(height: 16),
+              const CustomDivider(
+                color: BlueprintColors.successGreen,
+                thickness: 1,
+                isDash: false,
+              ),
+              const SizedBox(height: 16),
+              const CustomDividerWithLabel(
+                color: BlueprintColors.danger,
+                label: 'Combustible',
+              ),
+                const SizedBox(height: 16),
               BlueprintTextField(
                 label: 'Marca',
                 controller: _brandController,

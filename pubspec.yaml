@@ -2,7 +2,7 @@ name: auto_log_mi_nave_ota_labs
 description: "A app to track vehicle information."
 publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
-version: 1.0.0+1
+version: 1.0.0+28
 
 environment:
   sdk: ^3.11.4
