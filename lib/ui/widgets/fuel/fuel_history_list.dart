@@ -75,7 +75,17 @@ class _FuelHistoryListState extends ConsumerState<FuelHistoryList> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: <Widget>[
                       if (log.isFullTank) ...<Widget>[
-                        const FullTankBadge(),
+                        const CustomBadge(
+                          label: 'TANQUE LLENO',
+                          color: BlueprintColors.successGreen,
+                        ),
+                        const SizedBox(height: 4),
+                      ],
+                      if (log.isExtraFuel) ...<Widget>[
+                        const CustomBadge(
+                          label: 'GASOLINA EXTRA',
+                          color: BlueprintColors.infoBlue,
+                        ),
                         const SizedBox(height: 4),
                       ],
                       Text(

@@ -120,16 +120,22 @@ class _ScheduleDayRow extends StatelessWidget {
                 ),
                 if (isToday) ...<Widget>[
                   const SizedBox(height: 4),
-                  const _DayFlagChip(
+                  const CustomBadge(
                     label: 'HOY',
                     color: BlueprintColors.accentOrange,
+                    filled: true,
+                    borderRadius: 4,
+                    bold: true,
                   ),
                 ],
                 if (restrictsUser) ...<Widget>[
                   const SizedBox(height: 4),
-                  const _DayFlagChip(
+                  const CustomBadge(
                     label: 'TU DÍA',
                     color: BlueprintColors.danger,
+                    filled: true,
+                    borderRadius: 4,
+                    bold: true,
                   ),
                 ],
               ],
@@ -162,33 +168,4 @@ class _ScheduleDayRow extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Etiqueta pequeña ("HOY" / "TU DÍA") para distinguir sin ambigüedad la
-/// fila del día de hoy de la fila que realmente restringe la placa del
-/// usuario — antes solo se diferenciaban por color, lo que se confundía
-/// fácilmente.
-class _DayFlagChip extends StatelessWidget {
-  const _DayFlagChip({required this.label, required this.color});
-
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-    decoration: BoxDecoration(
-      color: color.withValues(alpha: 0.15),
-      borderRadius: BorderRadius.circular(4),
-      border: Border.all(color: color.withValues(alpha: 0.6)),
-    ),
-    child: Text(
-      label,
-      style: AppTextStyles.labelSmall.copyWith(
-        color: color,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 0.4,
-      ),
-    ),
-  );
 }

@@ -15,6 +15,92 @@ const Color tertiaryDarkColor = Color.fromRGBO(255, 203, 80, 1);
 const Color lightErrorColor = Color.fromRGBO(184, 52, 90, 1);
 const Color darkErrorColor = Color.fromRGBO(239, 107, 129, 1);
 
+// --- OVERLAYS NATIVOS (diálogos, date picker, menús, bottom sheets) ---
+//
+// A diferencia del resto de la UI, estos widgets no viven dentro de
+// `BlueprintScaffold`: son rutas/overlays propios que resuelven su fondo
+// desde `ThemeData` en el momento de abrirse, y por lo tanto SÍ cambian con
+// el tema del sistema si no se fijan acá. Como `AppTextStyles` ya fuerza un
+// color de texto fijo (pensado para el fondo oscuro fijo de
+// `BlueprintColors.background`), estos overlays necesitan también un fondo
+// fijo — si no, en tema claro del sistema terminan con fondo claro
+// (heredado de `ColorScheme.surface`) y texto casi blanco encima,
+// ilegible. Se usa el mismo valor (`surfaceContainerLow`) que ya usan a
+// mano los `AlertDialog` de borrado (ver `fuel_history_list.dart`,
+// `legal_garage_screen.dart`, `odometer_quick_update_card.dart`), así que
+// esos quedan visualmente igual.
+final DatePickerThemeData _blueprintDatePickerTheme = DatePickerThemeData(
+  backgroundColor: BlueprintColors.surfaceContainerLow,
+  headerBackgroundColor: BlueprintColors.background,
+  headerForegroundColor: BlueprintColors.textPrimary,
+  weekdayStyle: AppTextStyles.bodySmall,
+  dayStyle: AppTextStyles.bodyMedium,
+  dayForegroundColor: WidgetStateProperty.resolveWith<Color?>(
+    (Set<WidgetState> states) => states.contains(WidgetState.selected)
+        ? BlueprintColors.onAccent
+        : states.contains(WidgetState.disabled)
+        ? BlueprintColors.textMuted
+        : BlueprintColors.textPrimary,
+  ),
+  dayBackgroundColor: WidgetStateProperty.resolveWith<Color?>(
+    (Set<WidgetState> states) => states.contains(WidgetState.selected)
+        ? BlueprintColors.accentOrange
+        : null,
+  ),
+  todayForegroundColor: WidgetStateProperty.resolveWith<Color?>(
+    (Set<WidgetState> states) => states.contains(WidgetState.selected)
+        ? BlueprintColors.onAccent
+        : BlueprintColors.accentOrange,
+  ),
+  todayBorder: const BorderSide(color: BlueprintColors.accentOrange),
+  yearStyle: AppTextStyles.bodyMedium,
+  yearForegroundColor: WidgetStateProperty.resolveWith<Color?>(
+    (Set<WidgetState> states) => states.contains(WidgetState.selected)
+        ? BlueprintColors.onAccent
+        : BlueprintColors.textPrimary,
+  ),
+  yearBackgroundColor: WidgetStateProperty.resolveWith<Color?>(
+    (Set<WidgetState> states) => states.contains(WidgetState.selected)
+        ? BlueprintColors.accentOrange
+        : null,
+  ),
+  rangePickerBackgroundColor: BlueprintColors.surfaceContainerLow,
+  dividerColor: BlueprintColors.outlineVariant,
+  subHeaderForegroundColor: BlueprintColors.textPrimary,
+  shape: kSharpShape,
+);
+
+const DialogThemeData _blueprintDialogTheme = DialogThemeData(
+  backgroundColor: BlueprintColors.surfaceContainerLow,
+  shape: kSharpShape,
+);
+
+const PopupMenuThemeData _blueprintPopupMenuTheme = PopupMenuThemeData(
+  color: BlueprintColors.surfaceContainerLow,
+  textStyle: AppTextStyles.bodyMedium,
+  shape: kSharpShape,
+);
+
+const BottomSheetThemeData _blueprintBottomSheetTheme = BottomSheetThemeData(
+  backgroundColor: BlueprintColors.surfaceContainerLow,
+  shape: kSharpShape,
+);
+
+// `ListTile`/`SwitchListTile`/`CheckboxListTile` NO heredan su color de
+// `textTheme` como el resto de los `Text`: su estilo por defecto es
+// `textTheme.bodyLarge!.copyWith(color: colorScheme.onSurface)` (ver
+// `list_tile.dart` en el SDK de Flutter) — ese `.copyWith` pisa el color fijo
+// de `AppTextStyles` con el `onSurface` adaptativo del `ColorScheme`, así que
+// títulos como "Fecha del tanqueo" o "Tanque lleno" (usados sin `style`
+// propio en varias pantallas) volvían a quedar casi negros en tema claro.
+// Se fija acá por la misma razón que el resto de los overlays de arriba.
+const ListTileThemeData _blueprintListTileTheme = ListTileThemeData(
+  textColor: BlueprintColors.textPrimary,
+  iconColor: BlueprintColors.textMuted,
+  titleTextStyle: AppTextStyles.bodyLarge,
+  subtitleTextStyle: AppTextStyles.bodySmall,
+);
+
 // --- LIGHT THEME ---
 final ThemeData appTheme = ThemeData(
   useMaterial3: true,
@@ -27,6 +113,17 @@ final ThemeData appTheme = ThemeData(
     error: lightErrorColor,
     brightness: Brightness.light,
   ),
+  // El menú de `DropdownButton`/`DropdownButtonFormField` usa `canvasColor`
+  // como fondo cuando no se pasa `dropdownColor` explícito — se fija acá
+  // por la misma razón que dialogTheme/datePickerTheme (ver comentario
+  // arriba): si no, en tema claro queda claro con el texto casi blanco de
+  // `AppTextStyles` encima.
+  canvasColor: BlueprintColors.surfaceContainerLow,
+  dialogTheme: _blueprintDialogTheme,
+  datePickerTheme: _blueprintDatePickerTheme,
+  popupMenuTheme: _blueprintPopupMenuTheme,
+  bottomSheetTheme: _blueprintBottomSheetTheme,
+  listTileTheme: _blueprintListTileTheme,
   textTheme: const TextTheme(
     displayLarge: AppTextStyles.displayLarge,
     headlineLarge: AppTextStyles.headlineLarge,
@@ -82,8 +179,12 @@ final ThemeData appTheme = ThemeData(
       borderRadius: BorderRadius.circular(12),
       borderSide: const BorderSide(color: primaryColor, width: 2),
     ),
+    // Fijo en blanco (no `primaryColor`): el fondo del formulario siempre es
+    // oscuro (`BlueprintColors.background`), sin importar el tema del
+    // sistema, así que no hace falta (ni conviene) un color de label que
+    // cambie con el tema.
     labelStyle: const TextStyle(
-      color: primaryColor,
+      color: BlueprintColors.textPrimary,
       fontFamily: AppTextStyles.fontFamily,
     ),
   ),
@@ -108,6 +209,12 @@ final ThemeData appDarkTheme = ThemeData(
     error: darkErrorColor,
     brightness: Brightness.dark,
   ),
+  canvasColor: BlueprintColors.surfaceContainerLow,
+  dialogTheme: _blueprintDialogTheme,
+  datePickerTheme: _blueprintDatePickerTheme,
+  popupMenuTheme: _blueprintPopupMenuTheme,
+  bottomSheetTheme: _blueprintBottomSheetTheme,
+  listTileTheme: _blueprintListTileTheme,
   textTheme: const TextTheme(
     displayLarge: AppTextStyles.displayLarge,
     headlineLarge: AppTextStyles.headlineLarge,
@@ -163,8 +270,8 @@ final ThemeData appDarkTheme = ThemeData(
       borderRadius: BorderRadius.circular(12),
       borderSide: const BorderSide(color: secondaryColor, width: 2),
     ),
-    labelStyle: TextStyle(
-      color: Colors.grey.shade300,
+    labelStyle: const TextStyle(
+      color: BlueprintColors.textPrimary,
       fontFamily: AppTextStyles.fontFamily,
     ),
   ),

@@ -27,4 +27,8 @@ class BlueprintColors {
   /// Color de texto/ícono sobre [accentOrange] (botón primario de acento).
   /// Derivado, no está en design_spec.md.
   static const Color onAccent = Color(0xFF1A0F00);
+
+  /// Acento azul (badges informativos, ej. gasolina extra). Derivado, no
+  /// está en design_spec.md.
+  static const Color infoBlue = Color(0xFF4DA6FF);
 }

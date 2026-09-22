@@ -1,4 +1,5 @@
 part of com.auto_log_mi_nave_ota_labs.app.ui.views;
+
 // Verde Oliva 526259
 class AddVehicleScreen extends ConsumerStatefulWidget {
   const AddVehicleScreen({super.key});
@@ -18,12 +19,10 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
   final TextEditingController _odometerController = TextEditingController(
     text: '0',
   );
-  final TextEditingController _tankCapacityController =
-      TextEditingController();
+  final TextEditingController _tankCapacityController = TextEditingController();
   FuelType _fuelType = FuelType.gasolinaCorriente;
   String _color = colorToHex(kVehicleColorOptions.first.swatch);
   String? _photoPath;
-  bool _scanning = false;
   bool _saving = false;
 
   @override
@@ -36,20 +35,6 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
     _odometerController.dispose();
     _tankCapacityController.dispose();
     super.dispose();
-  }
-
-  Future<void> _runOcr() async {
-    setState(() => _scanning = true);
-    VehicleOcrResult result = await ref
-        .read(ocrSimulationServiceProvider)
-        .scanVehicleRegistration();
-    if (!mounted) return;
-    setState(() {
-      _scanning = false;
-      _plateController.text = result.licensePlate;
-      _brandController.text = result.brand;
-      _modelController.text = result.model;
-    });
   }
 
   Future<void> _pickPhoto() async {
@@ -146,8 +131,6 @@ class _AddVehicleScreenState extends ConsumerState<AddVehicleScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              OcrScanButton(loading: _scanning, onTap: _runOcr),
-              const SizedBox(height: 16),
               BlueprintTextField(
                 label: 'Apodo (opcional)',
                 controller: _nicknameController,

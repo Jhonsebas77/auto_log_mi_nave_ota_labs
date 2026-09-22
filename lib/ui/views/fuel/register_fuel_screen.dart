@@ -16,6 +16,7 @@ class _RegisterFuelScreenState extends ConsumerState<RegisterFuelScreen> {
   final TextEditingController _stationController = TextEditingController();
   DateTime _date = DateTime.now();
   bool _fullTank = false;
+  bool _extraFuel = false;
   bool _saving = false;
 
   @override
@@ -54,6 +55,7 @@ class _RegisterFuelScreenState extends ConsumerState<RegisterFuelScreen> {
       // inconsistente con costo/galones cargados a mano.
       pricePerGallon: gallons > 0 ? totalCost / gallons : null,
       isFullTank: _fullTank,
+      isExtraFuel: _extraFuel,
       stationName: _stationController.text.trim().isEmpty
           ? null
           : _stationController.text.trim(),
@@ -189,6 +191,15 @@ class _RegisterFuelScreenState extends ConsumerState<RegisterFuelScreen> {
                       ),
                       value: _fullTank,
                       onChanged: (bool v) => setState(() => _fullTank = v),
+                    ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Gasolina extra'),
+                      subtitle: const Text(
+                        'Marca esto si tanqueaste gasolina extra/premium.',
+                      ),
+                      value: _extraFuel,
+                      onChanged: (bool v) => setState(() => _extraFuel = v),
                     ),
                     const SizedBox(height: 16),
                     BlueprintPrimaryButton(
