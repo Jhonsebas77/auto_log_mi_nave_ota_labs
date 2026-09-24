@@ -19,3 +19,4 @@ part 'fuel_metrics_calculator.dart';
 part 'id_generator.dart';
 part 'lifespan_calculator.dart';
 part 'logger.dart';
+part 'value_wrapper.dart';

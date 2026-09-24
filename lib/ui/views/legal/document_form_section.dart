@@ -165,13 +165,13 @@ class _DocumentFormSectionState extends ConsumerState<DocumentFormSection> {
           )
         : original.copyWith(
             documentType: _type,
-            issueDate: _issueDate,
+            issueDate: ValueWrapper<DateTime>(_issueDate),
             expirationDate: _expirationDate,
-            cost: double.tryParse(_costController.text),
-            entityName: entityName,
-            documentUrl: _attachmentPath,
-            documentNumber: documentNumber,
-            notes: notes,
+            cost: ValueWrapper<double>(double.tryParse(_costController.text)),
+            entityName: ValueWrapper<String>(entityName),
+            documentUrl: ValueWrapper<String>(_attachmentPath),
+            documentNumber: ValueWrapper<String>(documentNumber),
+            notes: ValueWrapper<String>(notes),
           );
     await widget.onSubmit(document);
   }

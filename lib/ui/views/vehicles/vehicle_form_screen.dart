@@ -146,11 +146,15 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
         fuelType: _fuelType,
         currentOdometer: int.parse(_odometerController.text),
         color: _color,
-        photoUrl: _photoPath,
-        nickname: _nicknameController.text.trim().isEmpty
-            ? null
-            : _nicknameController.text.trim(),
-        tankCapacityGallons: double.tryParse(_tankCapacityController.text),
+        photoUrl: ValueWrapper<String>(_photoPath),
+        nickname: ValueWrapper<String>(
+          _nicknameController.text.trim().isEmpty
+              ? null
+              : _nicknameController.text.trim(),
+        ),
+        tankCapacityGallons: ValueWrapper<double>(
+          double.tryParse(_tankCapacityController.text),
+        ),
       );
       await ref.read(vehiclesProvider.notifier).updateVehicle(updated);
     }

@@ -69,12 +69,12 @@ class Vehicle {
   /// calculándose igual a partir del historial de tanqueos.
   final double? tankCapacityGallons;
 
-  /// [photoUrl], [nickname] y [tankCapacityGallons] son opcionales y usan el
-  /// patrón centinela (`_unset`, definido en `models.dart`): no pasarlos
-  /// conserva el valor actual, pero pasarlos explícitamente como `null` sí
-  /// vacía el campo. Sin esto, `campo ?? this.campo` no puede distinguir "no
-  /// pasado" de "pasado como null" y esos campos quedarían imposibles de
-  /// vaciar desde la app (ej. borrar el apodo de un vehículo).
+  /// [photoUrl], [nickname] y [tankCapacityGallons] son opcionales y se
+  /// reciben envueltos en [ValueWrapper]: no pasarlos conserva el valor
+  /// actual, pero pasar `const ValueWrapper(null)` sí vacía el campo. Sin
+  /// esto, `campo ?? this.campo` no puede distinguir "no pasado" de "pasado
+  /// como null" y esos campos quedarían imposibles de vaciar desde la app
+  /// (ej. borrar el apodo de un vehículo).
   Vehicle copyWith({
     String? id,
     String? userId,
@@ -87,9 +87,9 @@ class Vehicle {
     DateTime? createdAt,
     DateTime? updatedAt,
     String? color,
-    Object? photoUrl = _unset,
-    Object? nickname = _unset,
-    Object? tankCapacityGallons = _unset,
+    ValueWrapper<String>? photoUrl,
+    ValueWrapper<String>? nickname,
+    ValueWrapper<double>? tankCapacityGallons,
   }) => Vehicle(
     id: id ?? this.id,
     userId: userId ?? this.userId,
@@ -102,11 +102,11 @@ class Vehicle {
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     color: color ?? this.color,
-    photoUrl: identical(photoUrl, _unset) ? this.photoUrl : photoUrl as String?,
-    nickname: identical(nickname, _unset) ? this.nickname : nickname as String?,
-    tankCapacityGallons: identical(tankCapacityGallons, _unset)
+    photoUrl: photoUrl == null ? this.photoUrl : photoUrl.value,
+    nickname: nickname == null ? this.nickname : nickname.value,
+    tankCapacityGallons: tankCapacityGallons == null
         ? this.tankCapacityGallons
-        : tankCapacityGallons as double?,
+        : tankCapacityGallons.value,
   );
 
   /// Representación completa de la fila (columnas `snake_case`). El

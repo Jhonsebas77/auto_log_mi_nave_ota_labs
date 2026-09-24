@@ -46,42 +46,36 @@ class LegalDocument {
   final String? documentNumber;
 
   /// [issueDate], [cost], [entityName], [documentUrl], [documentNumber] y
-  /// [notes] son opcionales y usan el patrón centinela (`_unset`, definido en
-  /// `models.dart`): no pasarlos conserva el valor actual, pero pasarlos
-  /// explícitamente como `null` sí vacía el campo. Sin esto,
-  /// `campo ?? this.campo` no puede distinguir "no pasado" de "pasado como
-  /// null" y esos campos quedarían imposibles de vaciar desde la app (ver
-  /// `DocumentFormSection._submit`, que depende de este comportamiento).
+  /// [notes] son opcionales y se reciben envueltos en [ValueWrapper]: no
+  /// pasarlos conserva el valor actual, pero pasar `const ValueWrapper(null)`
+  /// sí vacía el campo. Sin esto, `campo ?? this.campo` no puede distinguir
+  /// "no pasado" de "pasado como null" y esos campos quedarían imposibles de
+  /// vaciar desde la app (ver `DocumentFormSection._submit`, que depende de
+  /// este comportamiento).
   LegalDocument copyWith({
     String? id,
     String? vehicleId,
     DocumentType? documentType,
     DateTime? expirationDate,
-    Object? issueDate = _unset,
-    Object? cost = _unset,
-    Object? entityName = _unset,
-    Object? documentUrl = _unset,
-    Object? notes = _unset,
-    Object? documentNumber = _unset,
+    ValueWrapper<DateTime>? issueDate,
+    ValueWrapper<double>? cost,
+    ValueWrapper<String>? entityName,
+    ValueWrapper<String>? documentUrl,
+    ValueWrapper<String>? notes,
+    ValueWrapper<String>? documentNumber,
   }) => LegalDocument(
     id: id ?? this.id,
     vehicleId: vehicleId ?? this.vehicleId,
     documentType: documentType ?? this.documentType,
     expirationDate: expirationDate ?? this.expirationDate,
-    issueDate: identical(issueDate, _unset)
-        ? this.issueDate
-        : issueDate as DateTime?,
-    cost: identical(cost, _unset) ? this.cost : cost as double?,
-    entityName: identical(entityName, _unset)
-        ? this.entityName
-        : entityName as String?,
-    documentUrl: identical(documentUrl, _unset)
-        ? this.documentUrl
-        : documentUrl as String?,
-    notes: identical(notes, _unset) ? this.notes : notes as String?,
-    documentNumber: identical(documentNumber, _unset)
+    issueDate: issueDate == null ? this.issueDate : issueDate.value,
+    cost: cost == null ? this.cost : cost.value,
+    entityName: entityName == null ? this.entityName : entityName.value,
+    documentUrl: documentUrl == null ? this.documentUrl : documentUrl.value,
+    notes: notes == null ? this.notes : notes.value,
+    documentNumber: documentNumber == null
         ? this.documentNumber
-        : documentNumber as String?,
+        : documentNumber.value,
   );
 
   /// Representación completa de la fila (columnas `snake_case`), usada tal

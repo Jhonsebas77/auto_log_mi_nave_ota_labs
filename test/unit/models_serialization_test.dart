@@ -1,5 +1,6 @@
 import 'package:auto_log_mi_nave_ota_labs/core/enums/enums.dart';
 import 'package:auto_log_mi_nave_ota_labs/core/models/models.dart';
+import 'package:auto_log_mi_nave_ota_labs/core/utils/utils.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void expectVehicleEquals(Vehicle a, Vehicle b) {
@@ -129,23 +130,20 @@ void main() {
       expectVehicleEquals(full, result);
     });
 
-    test(
-      'copyWith con null explícito vacía nickname, photoUrl y '
-      'tankCapacityGallons (patrón centinela)',
-      () {
-        Vehicle result = full.copyWith(
-          nickname: null,
-          photoUrl: null,
-          tankCapacityGallons: null,
-        );
-        expect(result.nickname, isNull);
-        expect(result.photoUrl, isNull);
-        expect(result.tankCapacityGallons, isNull);
-        // El resto de los campos no se toca.
-        expect(result.id, full.id);
-        expect(result.color, full.color);
-      },
-    );
+    test('copyWith con null explícito vacía nickname, photoUrl y '
+        'tankCapacityGallons (ValueWrapper)', () {
+      Vehicle result = full.copyWith(
+        nickname: const ValueWrapper<String>(null),
+        photoUrl: const ValueWrapper<String>(null),
+        tankCapacityGallons: const ValueWrapper<double>(null),
+      );
+      expect(result.nickname, isNull);
+      expect(result.photoUrl, isNull);
+      expect(result.tankCapacityGallons, isNull);
+      // El resto de los campos no se toca.
+      expect(result.id, full.id);
+      expect(result.color, full.color);
+    });
   });
 
   group('FuelLog', () {
@@ -186,25 +184,22 @@ void main() {
       expect(result.isExtraFuel, isFalse);
     });
 
-    test(
-      'toJson usa exactamente las columnas de 0003_fuel_logs.sql + '
-      '0005_fuel_logs_extra_fuel.sql',
-      () {
-        Set<String> expectedColumns = <String>{
-          'id',
-          'vehicle_id',
-          'date',
-          'odometer',
-          'gallons',
-          'price_per_gallon',
-          'total_cost',
-          'is_full_tank',
-          'station_name',
-          'is_extra_fuel',
-        };
-        expect(full.toJson().keys.toSet(), expectedColumns);
-      },
-    );
+    test('toJson usa exactamente las columnas de 0003_fuel_logs.sql + '
+        '0005_fuel_logs_extra_fuel.sql', () {
+      Set<String> expectedColumns = <String>{
+        'id',
+        'vehicle_id',
+        'date',
+        'odometer',
+        'gallons',
+        'price_per_gallon',
+        'total_cost',
+        'is_full_tank',
+        'station_name',
+        'is_extra_fuel',
+      };
+      expect(full.toJson().keys.toSet(), expectedColumns);
+    });
   });
 
   group('LegalDocument', () {
@@ -265,39 +260,33 @@ void main() {
       expectLegalDocumentEquals(full, result);
     });
 
-    test(
-      'copyWith con null explícito vacía cost, entityName, notes y '
-      'documentNumber (patrón centinela)',
-      () {
-        LegalDocument result = full.copyWith(
-          cost: null,
-          entityName: null,
-          notes: null,
-          documentNumber: null,
-        );
-        expect(result.cost, isNull);
-        expect(result.entityName, isNull);
-        expect(result.notes, isNull);
-        expect(result.documentNumber, isNull);
-        // El resto de los campos no se toca.
-        expect(result.id, full.id);
-        expect(result.issueDate, full.issueDate);
-        expect(result.documentUrl, full.documentUrl);
-        expect(result.expirationDate, full.expirationDate);
-      },
-    );
+    test('copyWith con null explícito vacía cost, entityName, notes y '
+        'documentNumber (ValueWrapper)', () {
+      LegalDocument result = full.copyWith(
+        cost: const ValueWrapper<double>(null),
+        entityName: const ValueWrapper<String>(null),
+        notes: const ValueWrapper<String>(null),
+        documentNumber: const ValueWrapper<String>(null),
+      );
+      expect(result.cost, isNull);
+      expect(result.entityName, isNull);
+      expect(result.notes, isNull);
+      expect(result.documentNumber, isNull);
+      // El resto de los campos no se toca.
+      expect(result.id, full.id);
+      expect(result.issueDate, full.issueDate);
+      expect(result.documentUrl, full.documentUrl);
+      expect(result.expirationDate, full.expirationDate);
+    });
 
-    test(
-      'copyWith con issueDate y documentUrl en null también los vacía',
-      () {
-        LegalDocument result = full.copyWith(
-          issueDate: null,
-          documentUrl: null,
-        );
-        expect(result.issueDate, isNull);
-        expect(result.documentUrl, isNull);
-      },
-    );
+    test('copyWith con issueDate y documentUrl en null también los vacía', () {
+      LegalDocument result = full.copyWith(
+        issueDate: const ValueWrapper<DateTime>(null),
+        documentUrl: const ValueWrapper<String>(null),
+      );
+      expect(result.issueDate, isNull);
+      expect(result.documentUrl, isNull);
+    });
   });
 
   group('MaintenanceRecord', () {
