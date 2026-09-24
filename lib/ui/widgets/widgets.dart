@@ -12,7 +12,8 @@ import '../../core/constants/constants.dart';
 import '../../core/enums/enums.dart';
 import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
-import '../../core/services/services.dart' show AttachmentPickerService;
+import '../../core/services/services.dart'
+    show AttachmentPickerService, attachmentPickerServiceProvider;
 import '../../core/utils/utils.dart';
 import '../theme/theme.dart';
 
@@ -46,6 +47,7 @@ part 'lifespan_bar.dart';
 part 'maintenance/lifespan_bar_group.dart';
 part 'maintenance/service_history_segmented_list.dart';
 part 'settings/version.dart';
+part 'signed_attachment_image.dart';
 part 'snackbar.dart';
 part 'status_traffic_light.dart';
 part 'upload_zone.dart';

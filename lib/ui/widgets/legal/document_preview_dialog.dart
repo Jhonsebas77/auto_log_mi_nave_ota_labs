@@ -14,8 +14,8 @@ void showDocumentPreviewDialog(BuildContext context, String path) {
                 'esta demo).',
               ),
             )
-          : Image(
-              image: attachmentImageProvider(path),
+          : SignedAttachmentImage(
+              path: path,
               errorBuilder: (_, __, ___) => const Padding(
                 padding: EdgeInsets.all(24),
                 child: Text('No fue posible cargar la imagen adjunta.'),

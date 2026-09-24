@@ -1,5 +1,10 @@
-part of com.auto_log_mi_nave_ota_labs.app.core.data.repositories.mock;
+import 'package:auto_log_mi_nave_ota_labs/core/data/repositories/repositories.dart';
+import 'package:auto_log_mi_nave_ota_labs/core/models/models.dart';
+import 'package:auto_log_mi_nave_ota_labs/core/utils/utils.dart';
 
+/// Fixture de test: implementación en memoria de [VehicleRepository]. Vive en
+/// `test/helpers/` porque solo la usa `mock_repositories_test.dart`; no hay
+/// referencias en `lib/`.
 class MockVehicleRepository implements VehicleRepository {
   MockVehicleRepository({List<Vehicle>? seed})
     : _vehicles = <Vehicle>[...?seed];

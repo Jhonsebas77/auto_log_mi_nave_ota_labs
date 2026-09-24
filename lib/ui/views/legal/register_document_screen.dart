@@ -13,112 +13,7 @@ class RegisterDocumentScreen extends ConsumerStatefulWidget {
 
 class _RegisterDocumentScreenState
     extends ConsumerState<RegisterDocumentScreen> {
-  late DocumentType _type = widget.prefilledType ?? DocumentType.soat;
-  DateTime? _issueDate;
-  DateTime _expirationDate = DateTime.now().add(const Duration(days: 365));
-  final TextEditingController _entityController = TextEditingController();
-  final TextEditingController _costController = TextEditingController();
-  final TextEditingController _documentNumberController =
-      TextEditingController();
-  final TextEditingController _notesController = TextEditingController();
-  String? _attachmentPath;
   bool _saving = false;
-
-  @override
-  void dispose() {
-    _entityController.dispose();
-    _costController.dispose();
-    _documentNumberController.dispose();
-    _notesController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _pickDate({required bool isExpiration}) async {
-    DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: isExpiration ? _expirationDate : DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-    );
-    if (picked == null) return;
-    setState(() {
-      if (isExpiration) {
-        _expirationDate = picked;
-      } else {
-        _issueDate = picked;
-      }
-    });
-  }
-
-  Future<void> _pickAttachment() async {
-    String? userId = ref.read(authControllerProvider).user?.id;
-    if (userId == null) return;
-    String? path = await showModalBottomSheet<String?>(
-      context: context,
-      builder: (BuildContext context) => SafeArea(
-        child: Wrap(
-          children: <Widget>[
-            ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: const Text('Tomar foto'),
-              onTap: () async {
-                String? p = await ref
-                    .read(attachmentPickerServiceProvider)
-                    .pickImageFromCamera(userId: userId, category: 'legal');
-                if (context.mounted) Navigator.pop(context, p);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Elegir de galería'),
-              onTap: () async {
-                String? p = await ref
-                    .read(attachmentPickerServiceProvider)
-                    .pickImageFromGallery(userId: userId, category: 'legal');
-                if (context.mounted) Navigator.pop(context, p);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.picture_as_pdf),
-              title: const Text('Elegir PDF'),
-              onTap: () async {
-                String? p = await ref
-                    .read(attachmentPickerServiceProvider)
-                    .pickPdf(userId: userId, category: 'legal');
-                if (context.mounted) Navigator.pop(context, p);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-    if (path != null) setState(() => _attachmentPath = path);
-  }
-
-  Future<void> _submit(String vehicleId) async {
-    setState(() => _saving = true);
-    LegalDocument document = LegalDocument(
-      id: generateId(),
-      vehicleId: vehicleId,
-      documentType: _type,
-      issueDate: _issueDate,
-      expirationDate: _expirationDate,
-      cost: double.tryParse(_costController.text),
-      entityName: _entityController.text.trim().isEmpty
-          ? null
-          : _entityController.text.trim(),
-      documentUrl: _attachmentPath,
-      documentNumber: _documentNumberController.text.trim().isEmpty
-          ? null
-          : _documentNumberController.text.trim(),
-      notes: _notesController.text.trim().isEmpty
-          ? null
-          : _notesController.text.trim(),
-    );
-    await ref.read(legalDocumentActionsProvider).create(document);
-    if (!mounted) return;
-    unawaited(Navigator.of(context).maybePop());
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -129,80 +24,19 @@ class _RegisterDocumentScreenState
           ? const Center(child: Text('Selecciona un vehículo primero.'))
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  DropdownButtonFormField<DocumentType>(
-                    initialValue: _type,
-                    decoration: const InputDecoration(
-                      label: Text('Tipo de documento'),
-                    ),
-                    items: <DropdownMenuItem<DocumentType>>[
-                      for (final DocumentType t in DocumentType.values)
-                        DropdownMenuItem<DocumentType>(
-                          value: t,
-                          child: Text(t.label),
-                        ),
-                    ],
-                    onChanged: (DocumentType? t) =>
-                        setState(() => _type = t ?? _type),
-                  ),
-                  const SizedBox(height: 16),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Fecha de expedición (opcional)'),
-                    subtitle: Text(
-                      _issueDate == null
-                          ? 'Sin definir'
-                          : _formatDate(_issueDate!),
-                    ),
-                    trailing: const Icon(Icons.calendar_today),
-                    onTap: () => _pickDate(isExpiration: false),
-                  ),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Fecha de vencimiento'),
-                    subtitle: Text(_formatDate(_expirationDate)),
-                    trailing: const Icon(Icons.calendar_today),
-                    onTap: () => _pickDate(isExpiration: true),
-                  ),
-                  const SizedBox(height: 8),
-                  BlueprintTextField(
-                    label: 'Entidad',
-                    controller: _entityController,
-                  ),
-                  const SizedBox(height: 16),
-                  BlueprintTextField(
-                    label: '# de documento (opcional)',
-                    controller: _documentNumberController,
-                  ),
-                  const SizedBox(height: 16),
-                  BlueprintTextField(
-                    label: 'Costo (opcional)',
-                    controller: _costController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  BlueprintTextField(
-                    label: 'Información adicional (opcional)',
-                    controller: _notesController,
-                    maxLines: 3,
-                  ),
-                  const SizedBox(height: 16),
-                  UploadZone(filePath: _attachmentPath, onTap: _pickAttachment),
-                  const SizedBox(height: 24),
-                  BlueprintPrimaryButton(
-                    label: 'GUARDAR',
-                    loading: _saving,
-                    onPressed: () => _submit(vehicle.id),
-                  ),
-                ],
+              child: DocumentFormSection(
+                prefilledType: widget.prefilledType,
+                vehicleId: vehicle.id,
+                saveLabel: 'GUARDAR',
+                saving: _saving,
+                onSubmit: (LegalDocument document) async {
+                  setState(() => _saving = true);
+                  await ref.read(legalDocumentActionsProvider).create(document);
+                  if (!context.mounted) return;
+                  unawaited(Navigator.of(context).maybePop());
+                },
               ),
             ),
     );
   }
-
-  String _formatDate(DateTime date) => '${date.day}/${date.month}/${date.year}';
 }

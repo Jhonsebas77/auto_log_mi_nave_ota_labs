@@ -29,26 +29,27 @@ void main() {
       }
     }
 
-    // Cada celda "X - Y" de la tabla fuente son dos dígitos puntuales, no un
-    // rango inclusivo: los 5 días cubren los 10 dígitos sin solaparse.
-    test('Lunes restringe solo los dígitos 0 y 2', () {
-      expectRestrictedOnlyFor(monday, <int>[0, 2]);
+    // Fuente de verdad: picoYPlacaMedellin2026S2 en
+    // lib/core/constants/license_plate_restriction_medellin.dart. Cada día cubre
+    // dos dígitos puntuales; los 5 días cubren 0..9 exactamente una vez.
+    test('Lunes restringe solo los dígitos 5 y 8', () {
+      expectRestrictedOnlyFor(monday, <int>[5, 8]);
     });
 
-    test('Martes restringe solo los dígitos 6 y 9', () {
-      expectRestrictedOnlyFor(tuesday, <int>[6, 9]);
+    test('Martes restringe solo los dígitos 1 y 4', () {
+      expectRestrictedOnlyFor(tuesday, <int>[1, 4]);
     });
 
-    test('Miércoles restringe solo los dígitos 3 y 7', () {
-      expectRestrictedOnlyFor(wednesday, <int>[3, 7]);
+    test('Miércoles restringe solo los dígitos 0 y 2', () {
+      expectRestrictedOnlyFor(wednesday, <int>[0, 2]);
     });
 
-    test('Jueves restringe solo los dígitos 4 y 8', () {
-      expectRestrictedOnlyFor(thursday, <int>[4, 8]);
+    test('Jueves restringe solo los dígitos 3 y 6', () {
+      expectRestrictedOnlyFor(thursday, <int>[3, 6]);
     });
 
-    test('Viernes restringe solo los dígitos 1 y 5', () {
-      expectRestrictedOnlyFor(friday, <int>[1, 5]);
+    test('Viernes restringe solo los dígitos 7 y 9', () {
+      expectRestrictedOnlyFor(friday, <int>[7, 9]);
     });
 
     test('Fin de semana nunca restringe', () {

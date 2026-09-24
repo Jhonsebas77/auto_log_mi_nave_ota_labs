@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app.dart';
+import 'core/constants/constants.dart';
 import 'core/services/services.dart';
 
 const String _supabaseUrl = String.fromEnvironment('SUPABASE_URL');
@@ -22,11 +23,14 @@ Future<void> main() async {
     ),
   );
 
-  if (_supabaseUrl.isEmpty || _supabasePublishableKey.isEmpty) {
+  if (_supabaseUrl.isEmpty ||
+      _supabasePublishableKey.isEmpty ||
+      hardcodedEmail.isEmpty) {
     throw StateError(
       'Faltan las credenciales de Supabase. Corre la app con '
       '--dart-define=SUPABASE_URL=... '
       '--dart-define=SUPABASE_PUBLISHABLE_KEY=... '
+      '--dart-define=AUTH_EMAIL=... '
       '(o --dart-define-from-file=config/dart_defines.local.json).',
     );
   }

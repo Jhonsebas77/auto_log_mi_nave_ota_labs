@@ -3,12 +3,14 @@ part of com.auto_log_mi_nave_ota_labs.app.services;
 /// Selección y subida de adjuntos (foto/PDF) para documentos legales,
 /// facturas de mantenimiento y fotos de vehículo.
 ///
-/// El archivo elegido se sube directo a Supabase Storage (bucket
-/// `attachments`, ver `supabase/sql/0002_storage.sql`) bajo
-/// `{userId}/{category}/{id}.{ext}`, y se retorna la URL pública resultante
-/// — ya no se guarda ninguna ruta local. Se lee como bytes (`XFile.readAsBytes`
-/// / `PlatformFile.bytes`) en vez de usar `dart:io`, así el mismo código
-/// funciona igual en mobile y en web.
+/// El archivo elegido se sube directo a Supabase Storage (bucket privado
+/// `attachments`, ver `supabase/sql/0002_storage.sql` y
+/// `0006_attachments_private.sql`) bajo `{userId}/{category}/{id}.{ext}`, y
+/// se retorna el *object path* resultante — no una URL, porque el bucket es
+/// privado y solo sirve mediante URLs firmadas con TTL (ver
+/// [signedUrlFor]) — ya no se guarda ninguna ruta local. Se lee como bytes
+/// (`XFile.readAsBytes` / `PlatformFile.bytes`) en vez de usar `dart:io`, así
+/// el mismo código funciona igual en mobile y en web.
 class AttachmentPickerService {
   final ImagePicker _imagePicker = ImagePicker();
 
@@ -72,6 +74,15 @@ class AttachmentPickerService {
   }) async {
     String objectPath = '$userId/$category/${generateId()}.$extension';
     await _bucketApi.uploadBinary(objectPath, bytes);
-    return _bucketApi.getPublicUrl(objectPath);
+    // Se persiste la ruta del objeto, no una URL: el bucket es privado y las
+    // URLs firmadas caducan, así que no tiene sentido guardarlas.
+    return objectPath;
   }
+
+  /// TTL de 1 hora: alcanza de sobra para ver el adjunto en pantalla y evita
+  /// que un link copiado siga sirviendo indefinidamente.
+  static const int _signedUrlTtlSeconds = 3600;
+
+  Future<String> signedUrlFor(String objectPath) =>
+      _bucketApi.createSignedUrl(objectPath, _signedUrlTtlSeconds);
 }

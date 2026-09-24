@@ -3,7 +3,8 @@ part of com.auto_log_mi_nave_ota_labs.app.core.providers;
 class VehiclesNotifier extends AsyncNotifier<List<Vehicle>> {
   @override
   Future<List<Vehicle>> build() async {
-    String userId = ref.watch(authControllerProvider).user?.id ?? seedUserId;
+    String? userId = ref.watch(authControllerProvider).user?.id;
+    if (userId == null) return const <Vehicle>[];
     return ref.read(vehicleRepositoryProvider).getByUser(userId);
   }
 

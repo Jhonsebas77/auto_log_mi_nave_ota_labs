@@ -35,8 +35,8 @@ class UploadZone extends StatelessWidget {
                 children: <Widget>[
                   if (_isImage(filePath!))
                     ClipRRect(
-                      child: Image(
-                        image: attachmentImageProvider(filePath!),
+                      child: SignedAttachmentImage(
+                        path: filePath!,
                         width: 48,
                         height: 48,
                         fit: BoxFit.cover,

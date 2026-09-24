@@ -10,7 +10,7 @@ part 'license_plate_restriction_medellin.dart';
 part 'maintenance_intervals.dart';
 part 'vehicle_colors.dart';
 
-const String hardcodedEmail = 'jhonsebas77.otalabs@gmail.com';
+const String hardcodedEmail = String.fromEnvironment('AUTH_EMAIL');
 
 const List<String> monthsInSpanish = <String>[
   'Enero',

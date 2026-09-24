@@ -11,9 +11,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   static const Logger _log = Logger('LoginScreen');
 
-  final TextEditingController _emailController = TextEditingController(
-    text: hardcodedEmail,
-  );
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final FocusNode _passwordFocus = FocusNode();
   bool _obscureText = true;

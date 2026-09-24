@@ -13,3 +13,11 @@ part 'maintenance_record.dart';
 part 'scheduled_reminder.dart';
 part 'vehicle.dart';
 part 'vehicle_ocr_result.dart';
+
+/// Centinela usado por los `copyWith` de este library para distinguir
+/// "parámetro no pasado" (se conserva el valor actual) de "pasado
+/// explícitamente como `null`" (se debe vaciar el campo). Necesario solo en
+/// campos nullable: con el patrón `campo ?? this.campo` de Dart, pasar
+/// `null` explícito es indistinguible de no pasar nada, así que nunca se
+/// puede vaciar un campo opcional a través de `copyWith`.
+const Object _unset = Object();

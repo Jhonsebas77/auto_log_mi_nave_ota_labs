@@ -115,7 +115,7 @@ class _DocumentGroupList extends ConsumerStatefulWidget {
 class _DocumentGroupListState extends ConsumerState<_DocumentGroupList> {
   static const Logger _log = Logger('DocumentGroupList');
 
-  // Igual que FuelHistoryList: se oculta de inmediato al deslizar y solo se
+  // Igual que FuelHistorySliver: se oculta de inmediato al deslizar y solo se
   // revierte si el borrado remoto falla.
   final Set<String> _removedIds = <String>{};
 

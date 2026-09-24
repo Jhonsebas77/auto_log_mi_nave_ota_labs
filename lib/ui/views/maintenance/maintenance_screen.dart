@@ -32,21 +32,31 @@ class MaintenanceScreen extends ConsumerWidget {
       body: recordsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (Object error, _) => Center(child: Text('Error: $error')),
-        data: (List<MaintenanceRecord> records) => SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              LifespanBarGroup(statuses: lifespans),
-              const SizedBox(height: 16),
-              const Text(
-                'Historial de servicios',
-                style: AppTextStyles.titleMedium,
+        data: (List<MaintenanceRecord> records) => CustomScrollView(
+          slivers: <Widget>[
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+              sliver: SliverMainAxisGroup(
+                slivers: <Widget>[
+                  SliverToBoxAdapter(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        LifespanBarGroup(statuses: lifespans),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Historial de servicios',
+                          style: AppTextStyles.titleMedium,
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                    ),
+                  ),
+                  ServiceHistorySegmentedList(records: records),
+                ],
               ),
-              const SizedBox(height: 8),
-              ServiceHistorySegmentedList(records: records),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

@@ -111,28 +111,20 @@ class _VehicleBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     String? photoUrl = vehicle.photoUrl;
     if (photoUrl != null) {
-      return Image(
-        image: attachmentImageProvider(photoUrl),
+      return SignedAttachmentImage(
+        path: photoUrl,
         fit: BoxFit.cover,
-        loadingBuilder:
-            (
-              BuildContext context,
-              Widget child,
-              ImageChunkEvent? loadingProgress,
-            ) {
-              if (loadingProgress == null) return child;
-              return _fallbackBackground(
-                vehicle.color,
-                child: const SizedBox(
-                  width: 32,
-                  height: 32,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    color: Colors.white,
-                  ),
-                ),
-              );
-            },
+        placeholderBuilder: (BuildContext context) => _fallbackBackground(
+          vehicle.color,
+          child: const SizedBox(
+            width: 32,
+            height: 32,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.5,
+              color: Colors.white,
+            ),
+          ),
+        ),
         errorBuilder: (_, __, ___) => _fallbackBackground(vehicle.color),
       );
     }

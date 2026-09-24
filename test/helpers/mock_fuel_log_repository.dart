@@ -1,5 +1,10 @@
-part of com.auto_log_mi_nave_ota_labs.app.core.data.repositories.mock;
+import 'package:auto_log_mi_nave_ota_labs/core/data/repositories/repositories.dart';
+import 'package:auto_log_mi_nave_ota_labs/core/models/models.dart';
+import 'package:auto_log_mi_nave_ota_labs/core/utils/utils.dart';
 
+/// Fixture de test: implementación en memoria de [FuelLogRepository]. Vive en
+/// `test/helpers/` porque solo la usa `mock_repositories_test.dart`; no hay
+/// referencias en `lib/`.
 class MockFuelLogRepository implements FuelLogRepository {
   MockFuelLogRepository({List<FuelLog>? seed}) : _logs = <FuelLog>[...?seed];
 

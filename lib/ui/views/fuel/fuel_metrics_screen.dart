@@ -41,36 +41,46 @@ class _FuelMetricsScreenState extends ConsumerState<FuelMetricsScreen> {
         error: (Object error, _) => Center(child: Text('Error: $error')),
         data: (List<FuelLog> logs) => logs.isEmpty
             ? const _FuelEmptyState()
-            : SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    PerformanceCurveChart(curve: metrics.curve),
-                    const SizedBox(height: 16),
-                    KpiCardsRow(metrics: metrics),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: <Widget>[
-                        const Text(
-                          'Historial',
-                          style: AppTextStyles.titleMedium,
+            : CustomScrollView(
+                slivers: <Widget>[
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                    sliver: SliverMainAxisGroup(
+                      slivers: <Widget>[
+                        SliverToBoxAdapter(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: <Widget>[
+                              PerformanceCurveChart(curve: metrics.curve),
+                              const SizedBox(height: 16),
+                              KpiCardsRow(metrics: metrics),
+                              const SizedBox(height: 16),
+                              Row(
+                                children: <Widget>[
+                                  const Text(
+                                    'Historial',
+                                    style: AppTextStyles.titleMedium,
+                                  ),
+                                  const Spacer(),
+                                  _SortHistoryButton(
+                                    descending: _sortDescending,
+                                    onChanged: (bool value) =>
+                                        setState(() => _sortDescending = value),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                            ],
+                          ),
                         ),
-                        const Spacer(),
-                        _SortHistoryButton(
-                          descending: _sortDescending,
-                          onChanged: (bool value) =>
-                              setState(() => _sortDescending = value),
+                        FuelHistorySliver(
+                          logs: logs,
+                          sortDescending: _sortDescending,
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    FuelHistoryList(
-                      logs: logs,
-                      sortDescending: _sortDescending,
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
       ),
     );

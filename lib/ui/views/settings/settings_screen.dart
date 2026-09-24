@@ -24,13 +24,25 @@ class SettingsScreen extends ConsumerWidget {
             title: Text('Ciudad'),
             subtitle: Text('Medellín, Antioquia (fijo)'),
           ),
+          // `FlutterLocalNotificationService` es no-op en web (no existe
+          // implementación de plataforma del plugin ahí, ver
+          // flutter_local_notification_service.dart), así que el switch se
+          // deja visible pero deshabilitado en vez de prometer una
+          // funcionalidad que no hace nada: mismo layout en todas las
+          // plataformas, con un subtítulo que explica la limitación (igual
+          // patrón que el ListTile de "Ciudad" arriba).
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: const Text('Notificaciones de vencimientos'),
+            subtitle: kIsWeb
+                ? const Text('No disponible en la versión web.')
+                : null,
             value: settings.notificationsEnabled,
-            onChanged: (bool v) => ref
-                .read(settingsControllerProvider.notifier)
-                .toggleNotifications(v),
+            onChanged: kIsWeb
+                ? null
+                : (bool v) => ref
+                      .read(settingsControllerProvider.notifier)
+                      .toggleNotifications(v),
           ),
           const SizedBox(height: 24),
           OutlinedButton(

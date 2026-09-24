@@ -9,34 +9,38 @@ class OdometerQuickUpdateCard extends ConsumerWidget {
     TextEditingController controller = TextEditingController(
       text: vehicle.currentOdometer.toString(),
     );
-    int? result = await showDialog<int>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        backgroundColor: BlueprintColors.surfaceContainerLow,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-        title: const Text('Actualizar odómetro'),
-        content: BlueprintTextField(
-          label: 'Odómetro (km)',
-          controller: controller,
-          keyboardType: TextInputType.number,
+    try {
+      int? result = await showDialog<int>(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          backgroundColor: BlueprintColors.surfaceContainerLow,
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+          title: const Text('Actualizar odómetro'),
+          content: BlueprintTextField(
+            label: 'Odómetro (km)',
+            controller: controller,
+            keyboardType: TextInputType.number,
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () =>
+                  Navigator.pop(context, int.tryParse(controller.text)),
+              child: const Text('Guardar'),
+            ),
+          ],
         ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () =>
-                Navigator.pop(context, int.tryParse(controller.text)),
-            child: const Text('Guardar'),
-          ),
-        ],
-      ),
-    );
-    if (result != null && result >= vehicle.currentOdometer) {
-      await ref
-          .read(vehiclesProvider.notifier)
-          .bumpOdometer(vehicle.id, result);
+      );
+      if (result != null && result >= vehicle.currentOdometer) {
+        await ref
+            .read(vehiclesProvider.notifier)
+            .bumpOdometer(vehicle.id, result);
+      }
+    } finally {
+      controller.dispose();
     }
   }
 

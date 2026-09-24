@@ -1,7 +1,10 @@
 part of com.auto_log_mi_nave_ota_labs.app.ui.widgets;
 
-class FuelHistoryList extends ConsumerStatefulWidget {
-  const FuelHistoryList({
+/// Historial de tanqueos como sliver: se usa dentro de un `CustomScrollView`
+/// para que la lista virtualice de verdad (solo construye los `Dismissible`
+/// visibles en el viewport, no todo el historial en cada rebuild).
+class FuelHistorySliver extends ConsumerStatefulWidget {
+  const FuelHistorySliver({
     required this.logs,
     this.sortDescending = true,
     super.key,
@@ -15,97 +18,123 @@ class FuelHistoryList extends ConsumerStatefulWidget {
   final bool sortDescending;
 
   @override
-  ConsumerState<FuelHistoryList> createState() => _FuelHistoryListState();
+  ConsumerState<FuelHistorySliver> createState() => _FuelHistorySliverState();
 }
 
-class _FuelHistoryListState extends ConsumerState<FuelHistoryList> {
-  static const Logger _log = Logger('FuelHistoryList');
+class _FuelHistorySliverState extends ConsumerState<FuelHistorySliver> {
+  static const Logger _log = Logger('FuelHistorySliver');
 
+  // Ocultamiento optimista mientras el borrado remoto está en vuelo: entre
+  // el swipe y que `fuelLogsProvider` termine de refrescar (dos round-trips
+  // de red), Riverpod sigue mostrando la lista anterior
+  // (AsyncValue.when con skipLoadingOnRefresh = true, default), así que sin
+  // este Set el tanqueo recién borrado reaparecería un instante. Se limpia
+  // en didUpdateWidget apenas llega una lista `logs` distinta, para que no
+  // crezca sin límite.
   final Set<String> _removedIds = <String>{};
 
+  List<FuelLog> _visible = <FuelLog>[];
+
   @override
-  Widget build(BuildContext context) {
+  void initState() {
+    super.initState();
+    _recomputeVisible();
+  }
+
+  @override
+  void didUpdateWidget(FuelHistorySliver oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.logs, widget.logs) ||
+        oldWidget.sortDescending != widget.sortDescending) {
+      if (!identical(oldWidget.logs, widget.logs)) {
+        // Llegó una lista nueva de verdad (no la misma referencia que
+        // Riverpod conserva mientras refresca): lo que estaba oculto de
+        // forma optimista ya no hace falta seguir ocultándolo.
+        _removedIds.clear();
+      }
+      _recomputeVisible();
+    }
+  }
+
+  void _recomputeVisible() {
     List<FuelLog> sorted = widget.sortDescending
         ? widget.logs.reversed.toList()
         : widget.logs;
-    List<FuelLog> visible = sorted
+    _visible = sorted
         .where((FuelLog log) => !_removedIds.contains(log.id))
         .toList();
-    return Column(
-      children: <Widget>[
-        for (final FuelLog log in visible)
-          Dismissible(
-            key: ValueKey<String>(log.id),
-            direction: DismissDirection.endToStart,
-            background: _deleteSwipeBackground(),
-            confirmDismiss: (_) => _confirmDelete(context, log),
-            onDismissed: (_) => _deleteLog(log),
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                border: Border.all(color: BlueprintColors.outlineVariant),
-              ),
-              child: Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          _formatDate(log.date),
-                          style: AppTextStyles.bodySmall,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${log.odometer} km · '
-                          '${log.gallons.toStringAsFixed(1)} gal',
-                          style: AppTextStyles.bodyMedium,
-                        ),
-                        if (log.stationName != null)
-                          Text(
-                            log.stationName!,
-                            style: AppTextStyles.bodySmall,
-                          ),
-                      ],
+  }
+
+  @override
+  Widget build(BuildContext context) => SliverList.builder(
+    itemCount: _visible.length,
+    itemBuilder: (BuildContext context, int index) {
+      FuelLog log = _visible[index];
+      return Dismissible(
+        key: ValueKey<String>(log.id),
+        direction: DismissDirection.endToStart,
+        background: _deleteSwipeBackground(),
+        confirmDismiss: (_) => _confirmDelete(context, log),
+        onDismissed: (_) => _deleteLog(log),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            border: Border.all(color: BlueprintColors.outlineVariant),
+          ),
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(_formatDate(log.date), style: AppTextStyles.bodySmall),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${log.odometer} km · '
+                      '${log.gallons.toStringAsFixed(1)} gal',
+                      style: AppTextStyles.bodyMedium,
                     ),
+                    if (log.stationName != null)
+                      Text(log.stationName!, style: AppTextStyles.bodySmall),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: <Widget>[
+                  if (log.isFullTank) ...<Widget>[
+                    const CustomBadge(
+                      label: 'TANQUE LLENO',
+                      color: BlueprintColors.successGreen,
+                    ),
+                    const SizedBox(height: 4),
+                  ],
+                  if (log.isExtraFuel) ...<Widget>[
+                    const CustomBadge(
+                      label: 'GASOLINA EXTRA',
+                      color: BlueprintColors.infoBlue,
+                    ),
+                    const SizedBox(height: 4),
+                  ],
+                  Text(
+                    copFormat.format(log.totalCost),
+                    style: AppTextStyles.bodyLarge,
                   ),
-                  const SizedBox(width: 8),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: <Widget>[
-                      if (log.isFullTank) ...<Widget>[
-                        const CustomBadge(
-                          label: 'TANQUE LLENO',
-                          color: BlueprintColors.successGreen,
-                        ),
-                        const SizedBox(height: 4),
-                      ],
-                      if (log.isExtraFuel) ...<Widget>[
-                        const CustomBadge(
-                          label: 'GASOLINA EXTRA',
-                          color: BlueprintColors.infoBlue,
-                        ),
-                        const SizedBox(height: 4),
-                      ],
-                      Text(
-                        copFormat.format(log.totalCost),
-                        style: AppTextStyles.bodyLarge,
-                      ),
-                      if (log.pricePerGallon != null)
-                        Text(
-                          '${copFormat.format(log.pricePerGallon)}/gal',
-                          style: AppTextStyles.bodySmall,
-                        ),
-                    ],
-                  ),
+                  if (log.pricePerGallon != null)
+                    Text(
+                      '${copFormat.format(log.pricePerGallon)}/gal',
+                      style: AppTextStyles.bodySmall,
+                    ),
                 ],
               ),
-            ),
+            ],
           ),
-      ],
-    );
-  }
+        ),
+      );
+    },
+  );
 
   Widget _deleteSwipeBackground() => Container(
     margin: const EdgeInsets.only(bottom: 8),
@@ -149,7 +178,10 @@ class _FuelHistoryListState extends ConsumerState<FuelHistoryList> {
   }
 
   Future<void> _deleteLog(FuelLog log) async {
-    setState(() => _removedIds.add(log.id));
+    setState(() {
+      _removedIds.add(log.id);
+      _recomputeVisible();
+    });
     try {
       await ref.read(fuelLogActionsProvider).delete(log);
       if (mounted) showSuccessSnackBar(context, 'Tanqueo eliminado');
@@ -159,7 +191,10 @@ class _FuelHistoryListState extends ConsumerState<FuelHistoryList> {
       // que el registro vuelva a aparecer, en vez de quedar "eliminado" solo
       // en la UI mientras sigue existiendo en Supabase.
       if (mounted) {
-        setState(() => _removedIds.remove(log.id));
+        setState(() {
+          _removedIds.remove(log.id);
+          _recomputeVisible();
+        });
         showErrorSnackBar(context, 'No se pudo eliminar el tanqueo.');
       }
     }

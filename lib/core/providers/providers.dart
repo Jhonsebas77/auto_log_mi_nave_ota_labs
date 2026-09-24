@@ -8,7 +8,6 @@ import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 import '../constants/constants.dart';
 import '../data/repositories/repositories.dart';
-import '../data/seed/demo_seed.dart';
 import '../enums/enums.dart';
 import '../models/models.dart';
 import '../services/services.dart';

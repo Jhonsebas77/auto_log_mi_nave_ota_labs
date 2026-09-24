@@ -31,14 +31,15 @@ class NotificationReconciler {
       _cancelExisting(document);
 
   Future<void> _cancelExisting(LegalDocument document) async {
-    for (int offset in const <int>[30, 15, 7, 1]) {
+    for (int offset in kDocumentReminderOffsetsDays) {
       await _notificationService.cancel(reminderIdFor(document.id, offset));
     }
   }
 
   /// Cancela todo y reprograma desde cero a partir de los documentos
-  /// existentes en el repositorio mock. Se ejecuta al iniciar la app (tras
-  /// login) y cuando se reactiva el toggle de notificaciones en Settings.
+  /// existentes en el repositorio de Supabase. Se ejecuta al iniciar la app
+  /// (tras login) y cuando se reactiva el toggle de notificaciones en
+  /// Settings.
   Future<void> reconcileAll({
     required DateTime now,
     required bool notificationsEnabled,

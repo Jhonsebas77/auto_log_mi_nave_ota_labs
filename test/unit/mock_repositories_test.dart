@@ -1,7 +1,9 @@
-import 'package:auto_log_mi_nave_ota_labs/core/data/repositories/mock/mock.dart';
 import 'package:auto_log_mi_nave_ota_labs/core/enums/enums.dart';
 import 'package:auto_log_mi_nave_ota_labs/core/models/models.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../helpers/mock_fuel_log_repository.dart';
+import '../helpers/mock_vehicle_repository.dart';
 
 Vehicle _vehicle({String id = '', int odometer = 1000}) => Vehicle(
   id: id,
