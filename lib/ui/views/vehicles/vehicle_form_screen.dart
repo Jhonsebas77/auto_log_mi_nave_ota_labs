@@ -169,8 +169,7 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
       appBar: BlueprintFormAppBar(
         title: editing ? 'Editar Vehículo' : 'Agregar Vehículo',
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+      body: BlueprintFormBody(
         child: Form(
           key: _formKey,
           child: Column(

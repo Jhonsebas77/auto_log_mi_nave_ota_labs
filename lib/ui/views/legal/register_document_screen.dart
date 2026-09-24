@@ -22,8 +22,7 @@ class _RegisterDocumentScreenState
       appBar: const BlueprintFormAppBar(title: 'Registrar Documento'),
       body: vehicle == null
           ? const Center(child: Text('Selecciona un vehículo primero.'))
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+          : BlueprintFormBody(
               child: DocumentFormSection(
                 prefilledType: widget.prefilledType,
                 vehicleId: vehicle.id,

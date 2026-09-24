@@ -2,7 +2,7 @@ part of com.auto_log_mi_nave_ota_labs.app.ui.views;
 
 class RegisterMaintenanceScreen extends ConsumerStatefulWidget {
   const RegisterMaintenanceScreen({super.key});
- static const String route = '/maintenance/register';
+  static const String route = '/maintenance/register';
 
   @override
   ConsumerState<RegisterMaintenanceScreen> createState() =>
@@ -78,8 +78,7 @@ class _RegisterMaintenanceScreenState
       appBar: const BlueprintFormAppBar(title: 'Registrar Mantenimiento'),
       body: vehicle == null
           ? const Center(child: Text('Selecciona un vehículo primero.'))
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+          : BlueprintFormBody(
               child: Form(
                 key: _formKey,
                 child: Column(

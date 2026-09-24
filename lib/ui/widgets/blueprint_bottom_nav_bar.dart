@@ -6,6 +6,16 @@ class _BlueprintNavDestination {
   final IconData icon;
 }
 
+/// Destinos de los tabs, compartidos por [BlueprintBottomNavBar] (móvil) y
+/// [BlueprintSideNav] (tablet/escritorio).
+const List<_BlueprintNavDestination> _kNavDestinations =
+    <_BlueprintNavDestination>[
+      _BlueprintNavDestination('Inicio', Icons.dashboard),
+      _BlueprintNavDestination('Gasolina', Icons.local_gas_station),
+      _BlueprintNavDestination('Legal', Icons.gavel),
+      _BlueprintNavDestination('Taller', Icons.home_repair_service),
+    ];
+
 /// BottomNavBar tipo "pill": 4 destinos (Inicio/Gasolina/Legal/Taller) en una
 /// cápsula, más un botón circular separado a la derecha para Acciones
 /// Rápidas — layout pedido por el usuario a partir de una imagen de
@@ -23,14 +33,6 @@ class BlueprintBottomNavBar extends StatelessWidget {
   final ValueChanged<int> onDestinationSelected;
   final bool quickActionsSelected;
   final VoidCallback onQuickActionsTap;
-
-  static const List<_BlueprintNavDestination> _destinations =
-      <_BlueprintNavDestination>[
-        _BlueprintNavDestination('Inicio', Icons.dashboard),
-        _BlueprintNavDestination('Gasolina', Icons.local_gas_station),
-        _BlueprintNavDestination('Legal', Icons.gavel),
-        _BlueprintNavDestination('Taller', Icons.home_repair_service),
-      ];
 
   @override
   Widget build(BuildContext context) => DecoratedBox(
@@ -52,10 +54,10 @@ class BlueprintBottomNavBar extends StatelessWidget {
                   ),
                   child: Row(
                     children: <Widget>[
-                      for (int i = 0; i < _destinations.length; i++)
+                      for (int i = 0; i < _kNavDestinations.length; i++)
                         Expanded(
                           child: _NavItem(
-                            destination: _destinations[i],
+                            destination: _kNavDestinations[i],
                             selected: i == currentIndex,
                             onTap: () => onDestinationSelected(i),
                           ),

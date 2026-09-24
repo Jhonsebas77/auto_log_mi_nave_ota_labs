@@ -120,8 +120,7 @@ class _RegisterFuelScreenState extends ConsumerState<RegisterFuelScreen> {
       appBar: const BlueprintFormAppBar(title: 'Registrar Tanqueo'),
       body: vehicle == null
           ? const Center(child: Text('Selecciona un vehículo primero.'))
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+          : BlueprintFormBody(
               child: Form(
                 key: _formKey,
                 child: Column(

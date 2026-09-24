@@ -54,8 +54,15 @@ class DashboardScreen extends ConsumerWidget {
             ref.watch(legalDocumentsProvider(selected.id)).value ??
             const <LegalDocument>[];
 
+        // En tablet/web sobra ancho: cards de documentos con detalle
+        // (entidad, número, vencimiento y acción) en vez del semáforo corto.
+        // Odómetro y Pico y Placa siguen apilados como en móvil.
+        bool wide = Breakpoints.windowSizeOf(context) != WindowSize.compact;
+
         return SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          padding: wide
+              ? const EdgeInsets.all(32)
+              : const EdgeInsets.fromLTRB(16, 16, 16, 32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
@@ -74,7 +81,24 @@ class DashboardScreen extends ConsumerWidget {
                 licensePlate: selected.licensePlate,
               ),
               const SizedBox(height: 16),
-              DocumentStatusRow(documents: documents, now: DateTime.now()),
+              if (wide)
+                DocumentStatusCards(
+                  documents: documents,
+                  now: DateTime.now(),
+                  onOpen: (LegalDocument document) => CustomNavigator().push(
+                    context,
+                    DocumentDetailScreen(
+                      vehicleId: selected.id,
+                      documentId: document.id,
+                    ),
+                  ),
+                  onRegister: (DocumentType type) => CustomNavigator().push(
+                    context,
+                    RegisterDocumentScreen(prefilledType: type),
+                  ),
+                )
+              else
+                DocumentStatusRow(documents: documents, now: DateTime.now()),
             ],
           ),
         );

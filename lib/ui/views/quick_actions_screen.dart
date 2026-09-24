@@ -7,39 +7,44 @@ class QuickActionsScreen extends StatelessWidget {
   Widget build(BuildContext context) => Center(
     child: Padding(
       padding: const EdgeInsets.all(24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          const Text(
-            'Acciones Rápidas',
-            textAlign: TextAlign.center,
-            style: AppTextStyles.titleLarge,
-          ),
-          const SizedBox(height: 24),
-          _ActionCard(
-            icon: Icons.local_gas_station,
-            label: 'Registrar Tanqueo',
-            onTap: () =>
-                CustomNavigator().push(context, const RegisterFuelScreen()),
-          ),
-          const SizedBox(height: 12),
-          _ActionCard(
-            icon: Icons.build_circle,
-            label: 'Registrar Mantenimiento',
-            onTap: () => CustomNavigator().push(
-              context,
-              const RegisterMaintenanceScreen(),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: Breakpoints.formMaxWidth),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            const Text(
+              'Acciones Rápidas',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.titleLarge,
             ),
-          ),
-          const SizedBox(height: 12),
-          _ActionCard(
-            icon: Icons.gavel,
-            label: 'Registrar Documento',
-            onTap: () =>
-                CustomNavigator().push(context, const RegisterDocumentScreen()),
-          ),
-        ],
+            const SizedBox(height: 24),
+            _ActionCard(
+              icon: Icons.local_gas_station,
+              label: 'Registrar Tanqueo',
+              onTap: () =>
+                  CustomNavigator().push(context, const RegisterFuelScreen()),
+            ),
+            const SizedBox(height: 12),
+            _ActionCard(
+              icon: Icons.build_circle,
+              label: 'Registrar Mantenimiento',
+              onTap: () => CustomNavigator().push(
+                context,
+                const RegisterMaintenanceScreen(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            _ActionCard(
+              icon: Icons.gavel,
+              label: 'Registrar Documento',
+              onTap: () => CustomNavigator().push(
+                context,
+                const RegisterDocumentScreen(),
+              ),
+            ),
+          ],
+        ),
       ),
     ),
   );

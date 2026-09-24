@@ -69,8 +69,7 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
             ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+      body: BlueprintFormBody(
         child: _editing
             ? DocumentFormSection(
                 initial: document,

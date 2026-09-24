@@ -11,7 +11,6 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   static const Logger _log = Logger('LoginScreen');
 
-  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final FocusNode _passwordFocus = FocusNode();
   bool _obscureText = true;
@@ -71,7 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
     await HapticFeedback.mediumImpact();
 
     String? error = await auth.login(
-      email: _emailController.text,
+      email: hardcodedEmail,
       password: _passwordController.text,
     );
 
@@ -89,7 +88,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    _emailController.dispose();
     _passwordController.dispose();
     _passwordFocus.dispose();
     super.dispose();
@@ -199,7 +197,12 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: 24),
         _buildTitle().animate().fadeIn(duration: 500.ms, delay: 400.ms),
         const SizedBox(height: 40),
-        _buildForm()
+        ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: Breakpoints.formMaxWidth,
+              ),
+              child: _buildForm(),
+            )
             .animate()
             .fadeIn(duration: 500.ms, delay: 550.ms)
             .slideY(
