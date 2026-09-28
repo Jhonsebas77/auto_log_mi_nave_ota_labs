@@ -104,10 +104,8 @@ class LicensePlateRestrictionCard extends StatelessWidget {
             child: OutlinedButton(
               style: OutlinedButton.styleFrom(
                 foregroundColor: BlueprintColors.textPrimary,
-                side: const BorderSide(color: BlueprintColors.outlineVariant),
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(12)),
-                ),
+                side: const BorderSide(color: BlueprintColors.outline),
+                shape: kSharpShape,
               ),
               onPressed: () => _showScheduleSheet(context),
               child: const Text('Ver calendario del mes'),

@@ -3,10 +3,8 @@ part of com.auto_log_mi_nave_ota_labs.app.ui.widgets;
 /// `Color.red`/`.green`/`.blue` (0-255 int) están deprecados en favor de los
 /// componentes `.r`/`.g`/`.b` (double 0.0-1.0) — este helper hace la
 /// conversión de vuelta a 0-255 para los sliders.
-int _colorChannel255(double component) => (component * 255.0).round().clamp(
-  0,
-  255,
-);
+int _colorChannel255(double component) =>
+    (component * 255.0).round().clamp(0, 255);
 
 /// Selector de color RGB/hex del vehículo (reemplaza la paleta fija de
 /// chips). El swatch de previsualización, los tres sliders R/G/B y el
@@ -17,8 +15,6 @@ class BlueprintColorPicker extends StatefulWidget {
     required this.onChanged,
     super.key,
   });
-
-  /// Color actual, en formato `#RRGGBB` (o `RRGGBB`).
   final String colorHex;
   final ValueChanged<String> onChanged;
 
@@ -139,7 +135,7 @@ class _BlueprintColorPickerState extends State<BlueprintColorPicker> {
                   height: 28,
                   decoration: BoxDecoration(
                     color: option.swatch,
-                    border: Border.all(color: BlueprintColors.outlineVariant),
+                    border: Border.all(color: BlueprintColors.outline),
                   ),
                 ),
               ),
@@ -166,10 +162,7 @@ class _ColorChannelSlider extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
     children: <Widget>[
-      SizedBox(
-        width: 16,
-        child: Text(label, style: AppTextStyles.bodySmall),
-      ),
+      SizedBox(width: 16, child: Text(label, style: AppTextStyles.bodySmall)),
       Expanded(
         child: SliderTheme(
           data: SliderTheme.of(context).copyWith(

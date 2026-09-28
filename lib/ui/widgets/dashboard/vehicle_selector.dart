@@ -5,10 +5,17 @@ part of com.auto_log_mi_nave_ota_labs.app.ui.widgets;
 /// sobre un degradado en la parte inferior. La app solo soporta un
 /// vehículo por usuario, así que no ofrece selección entre varios.
 class VehicleSelector extends StatelessWidget {
-  const VehicleSelector({required this.vehicle, this.onEdit, super.key});
+  const VehicleSelector({
+    required this.vehicle,
+    this.onEdit,
+    this.height = 220,
+    super.key,
+  });
 
   final Vehicle vehicle;
   final VoidCallback? onEdit;
+
+  final double? height;
 
   String get _title =>
       (vehicle.nickname == null || vehicle.nickname!.trim().isEmpty)
@@ -17,7 +24,7 @@ class VehicleSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    height: 220,
+    height: height,
     decoration: BoxDecoration(
       border: Border.all(color: BlueprintColors.outlineVariant),
     ),

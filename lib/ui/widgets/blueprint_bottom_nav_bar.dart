@@ -140,7 +140,7 @@ class _QuickActionsButton extends StatelessWidget {
             ? BlueprintColors.accentOrange
             : BlueprintColors.surfaceContainerLow,
         shape: const CircleBorder(
-          side: BorderSide(color: BlueprintColors.outlineVariant),
+          side: BorderSide(color: BlueprintColors.outline),
         ),
         child: InkWell(
           customBorder: const CircleBorder(),

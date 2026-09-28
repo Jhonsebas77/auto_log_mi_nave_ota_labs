@@ -54,10 +54,26 @@ class DashboardScreen extends ConsumerWidget {
             ref.watch(legalDocumentsProvider(selected.id)).value ??
             const <LegalDocument>[];
 
-        // En tablet/web sobra ancho: cards de documentos con detalle
-        // (entidad, número, vencimiento y acción) en vez del semáforo corto.
-        // Odómetro y Pico y Placa siguen apilados como en móvil.
-        bool wide = Breakpoints.windowSizeOf(context) != WindowSize.compact;
+        WindowSize windowSize = Breakpoints.windowSizeOf(context);
+        bool wide = windowSize != WindowSize.compact;
+
+        Widget vehicleCard = VehicleSelector(
+          vehicle: selected,
+          height: switch (windowSize) {
+            WindowSize.compact => 220,
+            WindowSize.medium => 320,
+            WindowSize.expanded => null,
+          },
+          onEdit: () => CustomNavigator().push(
+            context,
+            EditVehicleScreen(vehicleId: selected.id),
+          ),
+        );
+        Widget odometerCard = OdometerQuickUpdateCard(vehicle: selected);
+        Widget picoYPlacaCard = LicensePlateRestrictionCard(
+          result: picoYPlaca,
+          licensePlate: selected.licensePlate,
+        );
 
         return SingleChildScrollView(
           padding: wide
@@ -66,20 +82,40 @@ class DashboardScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              VehicleSelector(
-                vehicle: selected,
-                onEdit: () => CustomNavigator().push(
-                  context,
-                  EditVehicleScreen(vehicleId: selected.id),
-                ),
-              ),
-              const SizedBox(height: 16),
-              OdometerQuickUpdateCard(vehicle: selected),
-              const SizedBox(height: 16),
-              LicensePlateRestrictionCard(
-                result: picoYPlaca,
-                licensePlate: selected.licensePlate,
-              ),
+              if (windowSize == WindowSize.expanded)
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      Expanded(
+                        flex: 3,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(minHeight: 280),
+                          child: vehicleCard,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        flex: 2,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: <Widget>[
+                            odometerCard,
+                            const SizedBox(height: 16),
+                            picoYPlacaCard,
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else ...<Widget>[
+                vehicleCard,
+                const SizedBox(height: 16),
+                odometerCard,
+                const SizedBox(height: 16),
+                picoYPlacaCard,
+              ],
               const SizedBox(height: 16),
               if (wide)
                 DocumentStatusCards(

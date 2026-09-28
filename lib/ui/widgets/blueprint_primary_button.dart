@@ -25,7 +25,7 @@ class BlueprintPrimaryButton extends StatelessWidget {
               width: 18,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                color: Colors.black,
+                color: BlueprintColors.onAccent,
               ),
             )
           : Row(

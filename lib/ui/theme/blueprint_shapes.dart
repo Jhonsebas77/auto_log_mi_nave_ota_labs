@@ -14,5 +14,5 @@ final Border kIndustrialBorder = Border.all(
 
 const OutlineInputBorder kSharpInputBorder = OutlineInputBorder(
   borderRadius: BorderRadius.zero,
-  borderSide: BorderSide(color: BlueprintColors.outlineVariant),
+  borderSide: BorderSide(color: BlueprintColors.outline),
 );

@@ -1,19 +1,18 @@
 part of com.auto_log_mi_nave_ota_labs.app.ui.theme;
 
-/// Tema unificado, portado 1:1 (estructura + colores) de
-/// app_track_ota_labs/lib/ui/theme.dart. `BlueprintColors` se mantiene aparte
-/// para los widgets que siguen pintando el look "Engineering Blueprint"
-/// directo (login, grids, corchetes, etc. — no dependen de ThemeData); este
-/// archivo es el que alimenta `ThemeData`/`MaterialApp` (botones, tabs,
-/// inputs, cards, snackbars, textTheme...).
-const Color primaryColor = Color(0xFF3B82F6);
-const Color primaryDarkColor = Color.fromARGB(255, 46, 109, 210);
-const Color secondaryColor = Color(0xFF64748B);
-const Color secondaryDarkColor = Color.fromRGBO(77, 208, 225, 1);
-const Color tertiaryColor = Color.fromRGBO(218, 153, 33, 1);
-const Color tertiaryDarkColor = Color.fromRGBO(255, 203, 80, 1);
-const Color lightErrorColor = Color.fromRGBO(184, 52, 90, 1);
-const Color darkErrorColor = Color.fromRGBO(239, 107, 129, 1);
+/// Tema unificado que alimenta `ThemeData`/`MaterialApp` (botones, inputs,
+/// switches, chips, cards, snackbars, textTheme...). Todos los componentes
+/// de Material se pintan con la paleta "Engineering Blueprint"
+/// (`BlueprintColors`) y esquinas rectas (`kSharpShape`), igual que el
+/// design system del proyecto de Stitch: el fondo de la app siempre es
+/// oscuro (`BlueprintScaffold`), así que tema claro y oscuro comparten los
+/// mismos colores de componentes — solo cambia el `brightness` del
+/// `ColorScheme`.
+///
+/// Antes se usaban el azul `#3B82F6` y grises genéricos de Material (tema
+/// portado de app_track_ota_labs): el botón principal quedaba azul con texto
+/// blanco (contraste 3.68, bajo AA para 16px) y los bordes de inputs no
+/// llegaban a 3:1 sobre el fondo.
 
 // --- OVERLAYS NATIVOS (diálogos, date picker, menús, bottom sheets) ---
 //
@@ -101,18 +100,196 @@ const ListTileThemeData _blueprintListTileTheme = ListTileThemeData(
   subtitleTextStyle: AppTextStyles.bodySmall,
 );
 
-// --- LIGHT THEME ---
-final ThemeData appTheme = ThemeData(
+// --- COMPONENTES BLUEPRINT (compartidos por ambos temas) ---
+
+const TextStyle _buttonTextStyle = TextStyle(
+  fontFamily: AppTextStyles.fontFamily,
+  fontSize: 16,
+  fontWeight: FontWeight.bold,
+  letterSpacing: 1,
+);
+
+ColorScheme _blueprintColorScheme(Brightness brightness) =>
+    ColorScheme.fromSeed(
+      seedColor: BlueprintColors.accentOrange,
+      brightness: brightness,
+      primary: BlueprintColors.accentOrange,
+      onPrimary: BlueprintColors.onAccent,
+      secondary: BlueprintColors.textMuted,
+      tertiary: BlueprintColors.successGreen,
+      error: BlueprintColors.danger,
+      onError: BlueprintColors.onAccent,
+      outline: BlueprintColors.outline,
+      outlineVariant: BlueprintColors.outlineVariant,
+    );
+
+const AppBarTheme _blueprintAppBarTheme = AppBarTheme(
+  backgroundColor: BlueprintColors.background,
+  foregroundColor: BlueprintColors.textPrimary,
+  centerTitle: true,
+  titleTextStyle: AppTextStyles.titleLarge,
+);
+
+final ElevatedButtonThemeData _blueprintElevatedButtonTheme =
+    ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: BlueprintColors.accentOrange,
+        foregroundColor: BlueprintColors.onAccent,
+        disabledBackgroundColor: BlueprintColors.accentOrange.withAlpha(120),
+        disabledForegroundColor: BlueprintColors.onAccent.withAlpha(160),
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        shape: kSharpShape,
+        textStyle: _buttonTextStyle,
+      ),
+    );
+
+final OutlinedButtonThemeData _blueprintOutlinedButtonTheme =
+    OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: BlueprintColors.accentOrange,
+        side: const BorderSide(color: BlueprintColors.accentOrange),
+        shape: kSharpShape,
+        textStyle: _buttonTextStyle.copyWith(fontSize: 14),
+      ),
+    );
+
+final TextButtonThemeData _blueprintTextButtonTheme = TextButtonThemeData(
+  style: TextButton.styleFrom(
+    foregroundColor: BlueprintColors.accentOrange,
+    shape: kSharpShape,
+    textStyle: _buttonTextStyle,
+  ),
+);
+
+/// Borde de reposo con `outline` (3.24:1 sobre el fondo): el borde es lo
+/// único que delimita el campo, así que necesita el 3:1 de WCAG 1.4.11 —
+/// `outlineVariant` (1.67:1) queda para cards y divisores decorativos.
+const InputDecorationTheme _blueprintInputDecorationTheme =
+    InputDecorationTheme(
+      border: kSharpInputBorder,
+      enabledBorder: kSharpInputBorder,
+      disabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.zero,
+        borderSide: BorderSide(color: BlueprintColors.outlineVariant),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.zero,
+        borderSide: BorderSide(color: BlueprintColors.accentOrange, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.zero,
+        borderSide: BorderSide(color: BlueprintColors.danger),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.zero,
+        borderSide: BorderSide(color: BlueprintColors.danger, width: 2),
+      ),
+      // Fijo en claro: el fondo del formulario siempre es oscuro
+      // (`BlueprintColors.background`), sin importar el tema del sistema.
+      labelStyle: TextStyle(
+        color: BlueprintColors.textPrimary,
+        fontFamily: AppTextStyles.fontFamily,
+      ),
+      floatingLabelStyle: TextStyle(
+        color: BlueprintColors.accentOrange,
+        fontFamily: AppTextStyles.fontFamily,
+      ),
+      hintStyle: TextStyle(
+        color: BlueprintColors.textMuted,
+        fontFamily: AppTextStyles.fontFamily,
+      ),
+      errorStyle: TextStyle(
+        color: BlueprintColors.danger,
+        fontFamily: AppTextStyles.fontFamily,
+      ),
+      suffixIconColor: BlueprintColors.textMuted,
+      prefixIconColor: BlueprintColors.textMuted,
+    );
+
+final SwitchThemeData _blueprintSwitchTheme = SwitchThemeData(
+  thumbColor: WidgetStateProperty.resolveWith<Color?>(
+    (Set<WidgetState> states) => states.contains(WidgetState.selected)
+        ? BlueprintColors.onAccent
+        : BlueprintColors.textMuted,
+  ),
+  trackColor: WidgetStateProperty.resolveWith<Color?>(
+    (Set<WidgetState> states) => states.contains(WidgetState.selected)
+        ? BlueprintColors.accentOrange
+        : BlueprintColors.surfaceContainerLow,
+  ),
+  trackOutlineColor: WidgetStateProperty.resolveWith<Color?>(
+    (Set<WidgetState> states) => states.contains(WidgetState.selected)
+        ? BlueprintColors.accentOrange
+        : BlueprintColors.outline,
+  ),
+);
+
+final SegmentedButtonThemeData _blueprintSegmentedButtonTheme =
+    SegmentedButtonThemeData(
+      style: ButtonStyle(
+        shape: const WidgetStatePropertyAll<OutlinedBorder>(kSharpShape),
+        side: const WidgetStatePropertyAll<BorderSide>(
+          BorderSide(color: BlueprintColors.outline),
+        ),
+        backgroundColor: WidgetStateProperty.resolveWith<Color?>(
+          (Set<WidgetState> states) => states.contains(WidgetState.selected)
+              ? BlueprintColors.accentOrange
+              : Colors.transparent,
+        ),
+        foregroundColor: WidgetStateProperty.resolveWith<Color?>(
+          (Set<WidgetState> states) => states.contains(WidgetState.selected)
+              ? BlueprintColors.onAccent
+              : BlueprintColors.textPrimary,
+        ),
+        textStyle: const WidgetStatePropertyAll<TextStyle>(
+          AppTextStyles.bodyMedium,
+        ),
+      ),
+    );
+
+const ChipThemeData _blueprintChipTheme = ChipThemeData(
+  backgroundColor: BlueprintColors.surfaceContainerLow,
+  side: BorderSide(color: BlueprintColors.outline),
+  shape: kSharpShape,
+  labelStyle: AppTextStyles.bodySmall,
+);
+
+const ProgressIndicatorThemeData _blueprintProgressIndicatorTheme =
+    ProgressIndicatorThemeData(color: BlueprintColors.accentOrange);
+
+final TextSelectionThemeData _blueprintTextSelectionTheme =
+    TextSelectionThemeData(
+      cursorColor: BlueprintColors.accentOrange,
+      selectionColor: BlueprintColors.accentOrange.withAlpha(90),
+      selectionHandleColor: BlueprintColors.accentOrange,
+    );
+
+const CardThemeData _blueprintCardTheme = CardThemeData(
+  elevation: 0,
+  color: BlueprintColors.surfaceContainerLow,
+  shape: RoundedRectangleBorder(
+    side: BorderSide(color: BlueprintColors.outlineVariant),
+  ),
+);
+
+const TextTheme _blueprintTextTheme = TextTheme(
+  displayLarge: AppTextStyles.displayLarge,
+  headlineLarge: AppTextStyles.headlineLarge,
+  headlineMedium: AppTextStyles.headlineMedium,
+  titleLarge: AppTextStyles.titleLarge,
+  titleMedium: AppTextStyles.titleMedium,
+  bodyLarge: AppTextStyles.bodyLarge,
+  bodyMedium: AppTextStyles.bodyMedium,
+  bodySmall: AppTextStyles.bodySmall,
+  labelMedium: AppTextStyles.labelMedium,
+  labelSmall: AppTextStyles.labelSmall,
+);
+
+ThemeData _blueprintTheme(Brightness brightness) => ThemeData(
   useMaterial3: true,
   fontFamily: AppTextStyles.fontFamily,
-  colorScheme: ColorScheme.fromSeed(
-    seedColor: primaryColor,
-    primary: primaryColor,
-    secondary: secondaryColor,
-    tertiary: tertiaryColor,
-    error: lightErrorColor,
-    brightness: Brightness.light,
-  ),
+  colorScheme: _blueprintColorScheme(brightness),
   // El menú de `DropdownButton`/`DropdownButtonFormField` usa `canvasColor`
   // como fondo cuando no se pasa `dropdownColor` explícito — se fija acá
   // por la misma razón que dialogTheme/datePickerTheme (ver comentario
@@ -124,163 +301,22 @@ final ThemeData appTheme = ThemeData(
   popupMenuTheme: _blueprintPopupMenuTheme,
   bottomSheetTheme: _blueprintBottomSheetTheme,
   listTileTheme: _blueprintListTileTheme,
-  textTheme: const TextTheme(
-    displayLarge: AppTextStyles.displayLarge,
-    headlineLarge: AppTextStyles.headlineLarge,
-    headlineMedium: AppTextStyles.headlineMedium,
-    titleLarge: AppTextStyles.titleLarge,
-    titleMedium: AppTextStyles.titleMedium,
-    bodyLarge: AppTextStyles.bodyLarge,
-    bodyMedium: AppTextStyles.bodyMedium,
-    bodySmall: AppTextStyles.bodySmall,
-    labelMedium: AppTextStyles.labelMedium,
-    labelSmall: AppTextStyles.labelSmall,
-  ),
-  appBarTheme: const AppBarTheme(
-    backgroundColor: primaryColor,
-    foregroundColor: Colors.white,
-    centerTitle: true,
-    titleTextStyle: TextStyle(
-      fontFamily: AppTextStyles.fontFamily,
-      fontSize: 20,
-      fontWeight: FontWeight.bold,
-      color: Colors.white,
-    ),
-  ),
-  elevatedButtonTheme: ElevatedButtonThemeData(
-    style: ElevatedButton.styleFrom(
-      backgroundColor: primaryColor,
-      foregroundColor: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      textStyle: const TextStyle(
-        fontFamily: AppTextStyles.fontFamily,
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-  ),
-  textButtonTheme: TextButtonThemeData(
-    style: TextButton.styleFrom(
-      foregroundColor: primaryColor,
-      textStyle: const TextStyle(
-        fontFamily: AppTextStyles.fontFamily,
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-  ),
-  inputDecorationTheme: InputDecorationTheme(
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: Colors.grey),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: primaryColor, width: 2),
-    ),
-    // Fijo en blanco (no `primaryColor`): el fondo del formulario siempre es
-    // oscuro (`BlueprintColors.background`), sin importar el tema del
-    // sistema, así que no hace falta (ni conviene) un color de label que
-    // cambie con el tema.
-    labelStyle: const TextStyle(
-      color: BlueprintColors.textPrimary,
-      fontFamily: AppTextStyles.fontFamily,
-    ),
-  ),
-  cardTheme: CardThemeData(
-    elevation: 1,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(12),
-      side: BorderSide(color: Colors.grey.shade300),
-    ),
-  ),
+  textTheme: _blueprintTextTheme,
+  appBarTheme: _blueprintAppBarTheme,
+  elevatedButtonTheme: _blueprintElevatedButtonTheme,
+  outlinedButtonTheme: _blueprintOutlinedButtonTheme,
+  textButtonTheme: _blueprintTextButtonTheme,
+  inputDecorationTheme: _blueprintInputDecorationTheme,
+  switchTheme: _blueprintSwitchTheme,
+  segmentedButtonTheme: _blueprintSegmentedButtonTheme,
+  chipTheme: _blueprintChipTheme,
+  progressIndicatorTheme: _blueprintProgressIndicatorTheme,
+  textSelectionTheme: _blueprintTextSelectionTheme,
+  cardTheme: _blueprintCardTheme,
 );
 
+// --- LIGHT THEME ---
+final ThemeData appTheme = _blueprintTheme(Brightness.light);
+
 // --- DARK THEME ---
-final ThemeData appDarkTheme = ThemeData(
-  useMaterial3: true,
-  fontFamily: AppTextStyles.fontFamily,
-  colorScheme: ColorScheme.fromSeed(
-    seedColor: primaryColor,
-    primary: primaryDarkColor,
-    secondary: secondaryDarkColor,
-    tertiary: tertiaryDarkColor,
-    error: darkErrorColor,
-    brightness: Brightness.dark,
-  ),
-  canvasColor: BlueprintColors.surfaceContainerLow,
-  dialogTheme: _blueprintDialogTheme,
-  datePickerTheme: _blueprintDatePickerTheme,
-  popupMenuTheme: _blueprintPopupMenuTheme,
-  bottomSheetTheme: _blueprintBottomSheetTheme,
-  listTileTheme: _blueprintListTileTheme,
-  textTheme: const TextTheme(
-    displayLarge: AppTextStyles.displayLarge,
-    headlineLarge: AppTextStyles.headlineLarge,
-    headlineMedium: AppTextStyles.headlineMedium,
-    titleLarge: AppTextStyles.titleLarge,
-    titleMedium: AppTextStyles.titleMedium,
-    bodyLarge: AppTextStyles.bodyLarge,
-    bodyMedium: AppTextStyles.bodyMedium,
-    bodySmall: AppTextStyles.bodySmall,
-    labelMedium: AppTextStyles.labelMedium,
-    labelSmall: AppTextStyles.labelSmall,
-  ),
-  appBarTheme: AppBarTheme(
-    backgroundColor: Colors.grey[900],
-    foregroundColor: Colors.white,
-    centerTitle: true,
-    titleTextStyle: const TextStyle(
-      fontFamily: AppTextStyles.fontFamily,
-      fontSize: 20,
-      fontWeight: FontWeight.bold,
-      color: Colors.white,
-    ),
-  ),
-  elevatedButtonTheme: ElevatedButtonThemeData(
-    style: ElevatedButton.styleFrom(
-      backgroundColor: primaryColor,
-      foregroundColor: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      textStyle: const TextStyle(
-        fontFamily: AppTextStyles.fontFamily,
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-  ),
-  textButtonTheme: TextButtonThemeData(
-    style: TextButton.styleFrom(
-      foregroundColor: secondaryColor,
-      textStyle: const TextStyle(
-        fontFamily: AppTextStyles.fontFamily,
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-  ),
-  inputDecorationTheme: InputDecorationTheme(
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: Colors.grey.shade700),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: secondaryColor, width: 2),
-    ),
-    labelStyle: const TextStyle(
-      color: BlueprintColors.textPrimary,
-      fontFamily: AppTextStyles.fontFamily,
-    ),
-  ),
-  cardTheme: CardThemeData(
-    elevation: 1,
-    color: Colors.grey[850],
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(12),
-      side: BorderSide(color: Colors.grey.shade800),
-    ),
-  ),
-);
+final ThemeData appDarkTheme = _blueprintTheme(Brightness.dark);

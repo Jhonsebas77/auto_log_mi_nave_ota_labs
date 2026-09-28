@@ -67,7 +67,7 @@ class _ActionCard extends StatelessWidget {
     child: Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        border: Border.all(color: BlueprintColors.outlineVariant),
+        border: Border.all(color: BlueprintColors.outline),
       ),
       child: Row(
         children: <Widget>[
