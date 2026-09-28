@@ -7,13 +7,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shimmer/shimmer.dart';
 
 import '../../core/constants/constants.dart';
 import '../../core/enums/enums.dart';
 import '../../core/models/models.dart';
 import '../../core/providers/providers.dart';
 import '../../core/services/services.dart'
-    show AttachmentPickerService, attachmentPickerServiceProvider;
+    show AttachmentPickerService, signedUrlProvider;
 import '../../core/utils/utils.dart';
 import '../theme/theme.dart';
 
@@ -51,6 +52,7 @@ part 'maintenance/lifespan_bar_group.dart';
 part 'maintenance/service_history_segmented_list.dart';
 part 'settings/version.dart';
 part 'signed_attachment_image.dart';
+part 'skeletons.dart';
 part 'snackbar.dart';
 part 'status_traffic_light.dart';
 part 'upload_zone.dart';

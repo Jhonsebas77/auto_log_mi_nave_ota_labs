@@ -37,6 +37,10 @@ class AttachmentPickerService {
     XFile? picked = await _imagePicker.pickImage(
       source: source,
       imageQuality: 85,
+      // Una foto de 12 MP no aporta nada en pantalla y pesa varios MB de
+      // subida/descarga; 1600 px alcanza para verla a pantalla completa.
+      maxWidth: 1600,
+      maxHeight: 1600,
     );
     if (picked == null) return null;
     return _upload(
@@ -82,6 +86,10 @@ class AttachmentPickerService {
   /// TTL de 1 hora: alcanza de sobra para ver el adjunto en pantalla y evita
   /// que un link copiado siga sirviendo indefinidamente.
   static const int _signedUrlTtlSeconds = 3600;
+
+  /// Cuánto se reutiliza una URL firmada (ver `signedUrlProvider`): un poco
+  /// menos que el TTL, para no servir nunca una que ya expiró.
+  static const Duration signedUrlCacheDuration = Duration(minutes: 55);
 
   Future<String> signedUrlFor(String objectPath) =>
       _bucketApi.createSignedUrl(objectPath, _signedUrlTtlSeconds);

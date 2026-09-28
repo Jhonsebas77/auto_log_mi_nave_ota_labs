@@ -62,6 +62,39 @@ void main() {
         expect(notificationService.scheduled, hasLength(8));
       },
     );
+
+    test(
+      'corridas concurrentes se serializan y gana la más reciente',
+      () async {
+        FakeNotificationService notificationService = FakeNotificationService();
+        FakeLegalDocumentRepository repository = FakeLegalDocumentRepository(
+          seed: <LegalDocument>[
+            fakeLegalDocument(
+              id: 'd1',
+              expirationDate: now.add(const Duration(days: 40)),
+            ),
+          ],
+        );
+        NotificationReconciler reconciler = NotificationReconciler(
+          notificationService: notificationService,
+          legalDocumentRepository: repository,
+        );
+
+        // Arranque (activadas) y, sin esperar, el toggle en Settings
+        // (desactivadas): al final no debe quedar nada agendado.
+        await Future.wait(<Future<void>>[
+          reconciler.reconcileAll(now: now, notificationsEnabled: true),
+          reconciler.reconcileAll(now: now, notificationsEnabled: false),
+        ]);
+
+        expect(notificationService.cancelAllCount, 2);
+        expect(
+          notificationService.calls.last,
+          'cancelAll',
+          reason: 'la última operación debe ser el cancelAll del toggle',
+        );
+      },
+    );
   });
 
   test(

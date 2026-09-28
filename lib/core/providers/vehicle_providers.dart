@@ -9,23 +9,38 @@ class VehiclesNotifier extends AsyncNotifier<List<Vehicle>> {
   }
 
   Future<void> addVehicle(Vehicle vehicle) async {
-    await ref.read(vehicleRepositoryProvider).create(vehicle);
-    ref.invalidateSelf();
-    await future;
+    Vehicle created = await ref.read(vehicleRepositoryProvider).create(vehicle);
+    await _upsert(created);
   }
 
   Future<void> updateVehicle(Vehicle vehicle) async {
-    await ref.read(vehicleRepositoryProvider).update(vehicle);
-    ref.invalidateSelf();
-    await future;
+    Vehicle updated = await ref.read(vehicleRepositoryProvider).update(vehicle);
+    await _upsert(updated);
   }
 
   Future<void> bumpOdometer(String vehicleId, int odometer) async {
-    await ref
+    Vehicle updated = await ref
         .read(vehicleRepositoryProvider)
         .bumpOdometerIfHigher(vehicleId, odometer);
-    ref.invalidateSelf();
-    await future;
+    await _upsert(updated);
+  }
+
+  /// Los repositorios ya devuelven la fila guardada (`insert/update
+  /// ...select()`), así que se parchea el estado local con ella en vez de
+  /// invalidar y volver a pedir la lista completa a Supabase. Gracias al
+  /// `==` de [Vehicle], si la fila no cambió (ej. un odómetro menor al
+  /// actual) nadie se reconstruye.
+  Future<void> _upsert(Vehicle vehicle) async {
+    List<Vehicle> current = await future;
+    int index = current.indexWhere((Vehicle v) => v.id == vehicle.id);
+    List<Vehicle> next = <Vehicle>[...current];
+    if (index == -1) {
+      next.add(vehicle);
+    } else {
+      if (current[index] == vehicle) return;
+      next[index] = vehicle;
+    }
+    state = AsyncData<List<Vehicle>>(next);
   }
 }
 
@@ -36,6 +51,10 @@ final AsyncNotifierProvider<VehiclesNotifier, List<Vehicle>> vehiclesProvider =
 
 /// Vehículo del usuario. La app solo soporta un vehículo por usuario, así
 /// que este es siempre el primero (y único) devuelto por [vehiclesProvider].
+///
+/// Los consumidores que solo necesitan un campo deberían usar
+/// `ref.watch(selectedVehicleProvider.select((Vehicle? v) => v?.campo))`
+/// para no reconstruirse cuando cambia otro campo del vehículo.
 final Provider<Vehicle?> selectedVehicleProvider = Provider<Vehicle?>((
   Ref ref,
 ) {

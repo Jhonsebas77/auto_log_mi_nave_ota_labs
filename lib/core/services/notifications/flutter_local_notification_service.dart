@@ -14,9 +14,20 @@ class FlutterLocalNotificationService implements NotificationService {
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
 
+  /// `init()` ya no se espera antes de `runApp` (ver `main.dart`), así que
+  /// puede llegar un `requestPermissions`/`scheduleAt` antes de que termine
+  /// — todas las operaciones esperan este mismo future (memoizado: el
+  /// plugin se inicializa una sola vez).
+  Future<void>? _initialized;
+
   @override
-  Future<void> init() async {
+  Future<void> init() => _initialized ??= _init();
+
+  Future<void> _init() async {
     if (kIsWeb) return;
+    // `latest_10y` en vez de `latest_all`: solo hace falta el rango de
+    // fechas de los recordatorios, y la base completa es bastante más
+    // pesada de decodificar en el isolate principal.
     tz_data.initializeTimeZones();
     tz.setLocalLocation(tz.getLocation('America/Bogota'));
 
@@ -39,6 +50,7 @@ class FlutterLocalNotificationService implements NotificationService {
   @override
   Future<bool> requestPermissions() async {
     if (kIsWeb) return false;
+    await init();
     bool? androidGranted = await _plugin
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
@@ -55,6 +67,7 @@ class FlutterLocalNotificationService implements NotificationService {
   @override
   Future<void> scheduleAt(ScheduledReminder reminder) async {
     if (kIsWeb) return;
+    await init();
     await _plugin.zonedSchedule(
       id: reminder.id,
       title: reminder.title,
@@ -75,12 +88,14 @@ class FlutterLocalNotificationService implements NotificationService {
   @override
   Future<void> cancel(int id) async {
     if (kIsWeb) return;
+    await init();
     await _plugin.cancel(id: id);
   }
 
   @override
   Future<void> cancelAll() async {
     if (kIsWeb) return;
+    await init();
     await _plugin.cancelAll();
   }
 }

@@ -12,7 +12,21 @@ class ScanlineOverlay extends StatefulWidget {
 class _ScanlineOverlayState extends State<ScanlineOverlay>
     with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
-  late Animation<double> _anim;
+
+  static final Widget _line = Container(
+    height: 2,
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        colors: <Color>[
+          Colors.transparent,
+          BlueprintColors.successGreen.withAlpha(30),
+          BlueprintColors.successGreen.withAlpha(50),
+          BlueprintColors.successGreen.withAlpha(30),
+          Colors.transparent,
+        ],
+      ),
+    ),
+  );
 
   @override
   void initState() {
@@ -21,7 +35,6 @@ class _ScanlineOverlayState extends State<ScanlineOverlay>
       vsync: this,
       duration: const Duration(seconds: 8),
     )..repeat();
-    _anim = Tween<double>(begin: 0, end: 1).animate(_ctrl);
   }
 
   @override
@@ -30,25 +43,29 @@ class _ScanlineOverlayState extends State<ScanlineOverlay>
     super.dispose();
   }
 
+  /// Solo se anima un `Transform.translate` (pintado, sin relayout del
+  /// `Stack`) dentro de su propio `RepaintBoundary`, así cada frame no
+  /// obliga a repintar el resto del login.
   @override
-  Widget build(BuildContext context) => AnimatedBuilder(
-    animation: _anim,
-    builder: (BuildContext context, _) => Positioned(
-      top: MediaQuery.of(context).size.height * _anim.value,
-      left: 0,
-      right: 0,
-      child: Container(
-        height: 2,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: <Color>[
-              Colors.transparent,
-              BlueprintColors.successGreen.withAlpha(30),
-              BlueprintColors.successGreen.withAlpha(50),
-              BlueprintColors.successGreen.withAlpha(30),
-              Colors.transparent,
-            ],
-          ),
+  Widget build(BuildContext context) => Positioned.fill(
+    child: IgnorePointer(
+      child: RepaintBoundary(
+        child: LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            double height = constraints.maxHeight;
+            return Align(
+              alignment: Alignment.topCenter,
+              child: AnimatedBuilder(
+                animation: _ctrl,
+                builder: (BuildContext context, Widget? child) =>
+                    Transform.translate(
+                      offset: Offset(0, height * _ctrl.value),
+                      child: child,
+                    ),
+                child: _line,
+              ),
+            );
+          },
         ),
       ),
     ),

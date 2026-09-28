@@ -94,4 +94,34 @@ class LegalDocument {
     'notes': notes,
     'document_number': documentNumber,
   };
+
+  /// Igualdad por valor (ver el comentario equivalente en `Vehicle`).
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LegalDocument &&
+          id == other.id &&
+          vehicleId == other.vehicleId &&
+          documentType == other.documentType &&
+          issueDate == other.issueDate &&
+          expirationDate == other.expirationDate &&
+          cost == other.cost &&
+          entityName == other.entityName &&
+          documentUrl == other.documentUrl &&
+          notes == other.notes &&
+          documentNumber == other.documentNumber;
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    vehicleId,
+    documentType,
+    issueDate,
+    expirationDate,
+    cost,
+    entityName,
+    documentUrl,
+    notes,
+    documentNumber,
+  );
 }

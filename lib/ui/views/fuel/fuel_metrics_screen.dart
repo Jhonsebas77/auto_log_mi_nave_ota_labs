@@ -1,28 +1,25 @@
 part of com.auto_log_mi_nave_ota_labs.app.ui.views;
 
-class FuelMetricsScreen extends ConsumerStatefulWidget {
+class FuelMetricsScreen extends ConsumerWidget {
   const FuelMetricsScreen({super.key});
 
   @override
-  ConsumerState<FuelMetricsScreen> createState() => _FuelMetricsScreenState();
-}
-
-class _FuelMetricsScreenState extends ConsumerState<FuelMetricsScreen> {
-  bool _sortDescending = true;
-
-  @override
-  Widget build(BuildContext context) {
-    Vehicle? vehicle = ref.watch(selectedVehicleProvider);
-    if (vehicle == null) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Solo el id: cambios de odómetro/foto/apodo del vehículo no deben
+    // reconstruir este tab (AppShell lo mantiene montado).
+    String? vehicleId = ref.watch(
+      selectedVehicleProvider.select((Vehicle? v) => v?.id),
+    );
+    if (vehicleId == null) {
       return const Center(
         child: Text('Agrega un vehículo para ver tus tanqueos.'),
       );
     }
 
     AsyncValue<List<FuelLog>> logsAsync = ref.watch(
-      fuelLogsProvider(vehicle.id),
+      fuelLogsProvider(vehicleId),
     );
-    FuelMetrics metrics = ref.watch(fuelMetricsProvider(vehicle.id));
+    FuelMetrics metrics = ref.watch(fuelMetricsProvider(vehicleId));
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -37,7 +34,7 @@ class _FuelMetricsScreenState extends ConsumerState<FuelMetricsScreen> {
         child: const Icon(Icons.add),
       ),
       body: logsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const FuelMetricsSkeleton(),
         error: (Object error, _) => Center(child: Text('Error: $error')),
         data: (List<FuelLog> logs) => logs.isEmpty
             ? const _FuelEmptyState()
@@ -55,28 +52,10 @@ class _FuelMetricsScreenState extends ConsumerState<FuelMetricsScreen> {
                               const SizedBox(height: 16),
                               KpiCardsRow(metrics: metrics),
                               const SizedBox(height: 16),
-                              Row(
-                                children: <Widget>[
-                                  const Text(
-                                    'Historial',
-                                    style: AppTextStyles.titleMedium,
-                                  ),
-                                  const Spacer(),
-                                  _SortHistoryButton(
-                                    descending: _sortDescending,
-                                    onChanged: (bool value) =>
-                                        setState(() => _sortDescending = value),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
                             ],
                           ),
                         ),
-                        FuelHistorySliver(
-                          logs: logs,
-                          sortDescending: _sortDescending,
-                        ),
+                        _FuelHistorySection(logs: logs),
                       ],
                     ),
                   ),
@@ -85,6 +64,45 @@ class _FuelMetricsScreenState extends ConsumerState<FuelMetricsScreen> {
       ),
     );
   }
+}
+
+/// Encabezado "Historial" + lista. El orden vive acá (y no en
+/// [FuelMetricsScreen]) para que cambiarlo solo reconstruya el historial,
+/// no la gráfica ni los KPIs.
+class _FuelHistorySection extends StatefulWidget {
+  const _FuelHistorySection({required this.logs});
+
+  final List<FuelLog> logs;
+
+  @override
+  State<_FuelHistorySection> createState() => _FuelHistorySectionState();
+}
+
+class _FuelHistorySectionState extends State<_FuelHistorySection> {
+  bool _sortDescending = true;
+
+  @override
+  Widget build(BuildContext context) => SliverMainAxisGroup(
+    slivers: <Widget>[
+      SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Row(
+            children: <Widget>[
+              const Text('Historial', style: AppTextStyles.titleMedium),
+              const Spacer(),
+              _SortHistoryButton(
+                descending: _sortDescending,
+                onChanged: (bool value) =>
+                    setState(() => _sortDescending = value),
+              ),
+            ],
+          ),
+        ),
+      ),
+      FuelHistorySliver(logs: widget.logs, sortDescending: _sortDescending),
+    ],
+  );
 }
 
 class _SortHistoryButton extends StatelessWidget {

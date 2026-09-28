@@ -4,12 +4,13 @@ part of com.auto_log_mi_nave_ota_labs.app.ui.widgets;
 /// como:
 /// - un *object path* del bucket privado `attachments` (dato nuevo, desde
 ///   `0006_attachments_private.sql`): hay que resolverlo a una URL firmada
-///   con [AttachmentPickerService.signedUrlFor] antes de poder mostrarlo.
+///   antes de poder mostrarlo. La firma la cachea `signedUrlProvider` por
+///   path, así un rebuild no vuelve a pedirla a Supabase.
 /// - una URL pública completa (`http(s)://...`, dato viejo guardado cuando
 ///   el bucket todavía era público): se muestra directo, sin pedir firma.
 ///
-/// Envuelve esa resolución en un único `FutureBuilder` para no repetirla en
-/// cada punto que muestra un adjunto.
+/// La imagen se decodifica al tamaño en que se muestra (ver [_resized]) en
+/// vez de a su resolución original.
 class SignedAttachmentImage extends ConsumerWidget {
   const SignedAttachmentImage({
     required this.path,
@@ -38,52 +39,81 @@ class SignedAttachmentImage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (_isLegacyPublicUrl) {
-      return Image(
-        image: attachmentImageProvider(path),
-        fit: fit,
-        width: width,
-        height: height,
-        errorBuilder: errorBuilder,
-      );
+      return _image(attachmentImageProvider(path));
     }
-    return FutureBuilder<String>(
-      future: ref.read(attachmentPickerServiceProvider).signedUrlFor(path),
-      builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          if (placeholderBuilder != null) return placeholderBuilder!(context);
-          return SizedBox(
-            width: width,
-            height: height,
-            child: const Center(
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
-          );
-        }
-        String? signedUrl = snapshot.data;
-        if (snapshot.hasError || signedUrl == null) {
-          return errorBuilder != null
-              ? errorBuilder!(
-                  context,
-                  snapshot.error ?? StateError('signed url vacía'),
-                  null,
-                )
+    return ref
+        .watch(signedUrlProvider(path))
+        .when(
+          // Al volver a firmar (cada ~55 min) se sigue mostrando la imagen
+          // anterior en vez de parpadear al placeholder.
+          skipLoadingOnRefresh: true,
+          skipLoadingOnReload: true,
+          data: (String signedUrl) =>
+              _image(attachmentImageProvider(signedUrl, cacheKey: path)),
+          loading: () => placeholderBuilder != null
+              ? placeholderBuilder!(context)
+              : SizedBox(
+                  width: width,
+                  height: height,
+                  child: const Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                ),
+          error: (Object error, StackTrace stackTrace) => errorBuilder != null
+              ? errorBuilder!(context, error, stackTrace)
               : const Icon(
                   Icons.broken_image_outlined,
                   color: BlueprintColors.textMuted,
-                );
-        }
-        return Image(
-          image: attachmentImageProvider(signedUrl),
-          fit: fit,
-          width: width,
-          height: height,
-          errorBuilder: errorBuilder,
+                ),
         );
-      },
-    );
+  }
+
+  /// Sin [width]/[height] explícitos, el tamaño de decodificación se acota
+  /// con el tamaño de la ventana y NO con un `LayoutBuilder`: este widget
+  /// se usa dentro de `IntrinsicHeight` (dashboard en escritorio), y
+  /// `LayoutBuilder` no soporta el cálculo de dimensiones intrínsecas —
+  /// revienta el layout de toda la fila.
+  Widget _image(ImageProvider provider) => Builder(
+    builder: (BuildContext context) {
+      Size window = MediaQuery.sizeOf(context);
+      return _buildImage(
+        _resized(
+          context,
+          provider,
+          width ?? window.width,
+          height ?? window.height,
+        ),
+      );
+    },
+  );
+
+  Widget _buildImage(ImageProvider provider) => Image(
+    image: provider,
+    fit: fit,
+    width: width,
+    height: height,
+    errorBuilder: errorBuilder,
+  );
+
+  /// Limita el ancho decodificado al lado mayor del espacio disponible (en
+  /// píxeles físicos). Con `BoxFit.cover` se deja el doble de margen, porque
+  /// según la proporción de la foto puede terminar escalada por el alto.
+  /// `ResizeImage` nunca agranda una imagen más pequeña que ese ancho.
+  ImageProvider _resized(
+    BuildContext context,
+    ImageProvider provider,
+    double? targetWidth,
+    double? targetHeight,
+  ) {
+    double side = math.max(targetWidth ?? 0, targetHeight ?? 0);
+    if (side <= 0 || !side.isFinite) return provider;
+    double factor = fit == BoxFit.cover ? 2 : 1;
+    int cacheWidth = (side * MediaQuery.devicePixelRatioOf(context) * factor)
+        .round();
+    return ResizeImage.resizeIfNeeded(cacheWidth, null, provider);
   }
 }

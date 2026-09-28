@@ -29,27 +29,37 @@ List<LifespanStatus> calculateLifespans({
   required List<MaintenanceRecord> records,
   required int currentOdometer,
 }) {
-  List<LifespanStatus> result = <LifespanStatus>[];
-  for (MaintenanceLifespanCategory category
-      in MaintenanceLifespanCategory.values) {
-    int lastOdometer = 0;
-    for (MaintenanceRecord record in records) {
-      if (_categoryForRecord(record) == category &&
-          record.odometer > lastOdometer) {
-        lastOdometer = record.odometer;
-      }
+  // Una sola pasada: la categoría de cada registro se resuelve una vez (y
+  // no una vez por categoría), guardando el mayor odómetro de cada una.
+  Map<MaintenanceLifespanCategory, int> lastOdometers =
+      <MaintenanceLifespanCategory, int>{};
+  for (MaintenanceRecord record in records) {
+    MaintenanceLifespanCategory? category = _categoryForRecord(record);
+    if (category == null) continue;
+    if (record.odometer > (lastOdometers[category] ?? 0)) {
+      lastOdometers[category] = record.odometer;
     }
-    int interval = intervalKmFor(category);
-    double progress = interval == 0
-        ? 0.0
-        : (currentOdometer - lastOdometer) / interval;
-    result.add(
-      LifespanStatus(
-        category: category,
-        progress: progress,
-        lastServiceOdometer: lastOdometer,
-      ),
-    );
   }
-  return result;
+
+  return <LifespanStatus>[
+    for (MaintenanceLifespanCategory category
+        in MaintenanceLifespanCategory.values)
+      _lifespanFor(category, lastOdometers[category] ?? 0, currentOdometer),
+  ];
+}
+
+LifespanStatus _lifespanFor(
+  MaintenanceLifespanCategory category,
+  int lastOdometer,
+  int currentOdometer,
+) {
+  int interval = intervalKmFor(category);
+  double progress = interval == 0
+      ? 0.0
+      : (currentOdometer - lastOdometer) / interval;
+  return LifespanStatus(
+    category: category,
+    progress: progress,
+    lastServiceOdometer: lastOdometer,
+  );
 }

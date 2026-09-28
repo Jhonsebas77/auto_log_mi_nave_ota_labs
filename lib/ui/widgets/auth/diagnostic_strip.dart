@@ -14,6 +14,18 @@ class _DiagnosticStripState extends State<DiagnosticStrip>
   late AnimationController _ctrl;
   late Animation<double> _anim;
 
+  static final Decoration _barDecoration = BoxDecoration(
+    gradient: LinearGradient(
+      colors: <Color>[
+        Colors.transparent,
+        BlueprintColors.accentOrange.withAlpha(200),
+        BlueprintColors.accentOrange,
+        BlueprintColors.accentOrange.withAlpha(200),
+        Colors.transparent,
+      ],
+    ),
+  );
+
   @override
   void initState() {
     super.initState();
@@ -33,45 +45,43 @@ class _DiagnosticStripState extends State<DiagnosticStrip>
     super.dispose();
   }
 
+  /// Solo se anima un `Transform.translate` (sin relayout) dentro de su
+  /// propio `RepaintBoundary`; el fondo y la barra se construyen una vez.
   @override
   Widget build(BuildContext context) => SizedBox(
     height: 2,
-    child: LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints constraints) {
-        double totalWidth = constraints.maxWidth;
-        double barWidth = totalWidth * 0.35;
+    child: RepaintBoundary(
+      child: ClipRect(
+        child: LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            double totalWidth = constraints.maxWidth;
+            double barWidth = totalWidth * 0.35;
 
-        return AnimatedBuilder(
-          animation: _anim,
-          builder: (_, __) {
-            double left = totalWidth * _anim.value;
             return Stack(
               children: <Widget>[
-                Container(color: BlueprintColors.gridLine),
+                const Positioned.fill(
+                  child: ColoredBox(color: BlueprintColors.gridLine),
+                ),
                 Positioned(
-                  left: left,
+                  left: 0,
                   top: 0,
                   bottom: 0,
                   width: barWidth,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: <Color>[
-                          Colors.transparent,
-                          BlueprintColors.accentOrange.withAlpha(200),
-                          BlueprintColors.accentOrange,
-                          BlueprintColors.accentOrange.withAlpha(200),
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
+                  child: AnimatedBuilder(
+                    animation: _anim,
+                    builder: (BuildContext context, Widget? child) =>
+                        Transform.translate(
+                          offset: Offset(totalWidth * _anim.value, 0),
+                          child: child,
+                        ),
+                    child: DecoratedBox(decoration: _barDecoration),
                   ),
                 ),
               ],
             );
           },
-        );
-      },
+        ),
+      ),
     ),
   );
 }

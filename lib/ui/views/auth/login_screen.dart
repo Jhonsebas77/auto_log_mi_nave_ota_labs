@@ -504,6 +504,7 @@ class _PulseDot extends StatefulWidget {
 class _PulseDotState extends State<_PulseDot>
     with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
+  late Animation<double> _opacity;
 
   @override
   void initState() {
@@ -512,6 +513,7 @@ class _PulseDotState extends State<_PulseDot>
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     )..repeat(reverse: true);
+    _opacity = Tween<double>(begin: 0.4, end: 1).animate(_ctrl);
   }
 
   @override
@@ -521,14 +523,13 @@ class _PulseDotState extends State<_PulseDot>
   }
 
   @override
-  Widget build(BuildContext context) => AnimatedBuilder(
-    animation: _ctrl,
-    builder: (_, __) => Opacity(
-      opacity: 0.4 + 0.6 * _ctrl.value,
-      child: Container(
+  Widget build(BuildContext context) => RepaintBoundary(
+    child: FadeTransition(
+      opacity: _opacity,
+      child: const SizedBox(
         width: 6,
         height: 6,
-        color: BlueprintColors.successGreen,
+        child: ColoredBox(color: BlueprintColors.successGreen),
       ),
     ),
   );

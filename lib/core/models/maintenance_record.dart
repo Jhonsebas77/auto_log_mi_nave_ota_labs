@@ -92,4 +92,34 @@ class MaintenanceRecord {
     'invoice_url': invoiceUrl,
     'notes': notes,
   };
+
+  /// Igualdad por valor (ver el comentario equivalente en `Vehicle`).
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MaintenanceRecord &&
+          id == other.id &&
+          vehicleId == other.vehicleId &&
+          serviceType == other.serviceType &&
+          category == other.category &&
+          date == other.date &&
+          odometer == other.odometer &&
+          totalCost == other.totalCost &&
+          workshopName == other.workshopName &&
+          invoiceUrl == other.invoiceUrl &&
+          notes == other.notes;
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    vehicleId,
+    serviceType,
+    category,
+    date,
+    odometer,
+    totalCost,
+    workshopName,
+    invoiceUrl,
+    notes,
+  );
 }

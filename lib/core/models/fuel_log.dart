@@ -90,4 +90,34 @@ class FuelLog {
     'is_extra_fuel': isExtraFuel,
     'station_name': stationName,
   };
+
+  /// Igualdad por valor (ver el comentario equivalente en `Vehicle`).
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FuelLog &&
+          id == other.id &&
+          vehicleId == other.vehicleId &&
+          date == other.date &&
+          odometer == other.odometer &&
+          gallons == other.gallons &&
+          pricePerGallon == other.pricePerGallon &&
+          totalCost == other.totalCost &&
+          isFullTank == other.isFullTank &&
+          isExtraFuel == other.isExtraFuel &&
+          stationName == other.stationName;
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    vehicleId,
+    date,
+    odometer,
+    gallons,
+    pricePerGallon,
+    totalCost,
+    isFullTank,
+    isExtraFuel,
+    stationName,
+  );
 }

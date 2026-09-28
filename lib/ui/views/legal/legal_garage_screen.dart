@@ -13,6 +13,20 @@ class _LegalGarageScreenState extends ConsumerState<LegalGarageScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
 
+  List<LegalDocument>? _groupedFrom;
+  Map<String, List<LegalDocument>> _groups = <String, List<LegalDocument>>{};
+
+  Map<String, List<LegalDocument>> _groupsFor(List<LegalDocument> documents) {
+    if (identical(documents, _groupedFrom)) return _groups;
+    _groupedFrom = documents;
+    return _groups = <String, List<LegalDocument>>{
+      for (final String group in _tabGroups)
+        group: documents
+            .where((LegalDocument d) => d.documentType.garageTabGroup == group)
+            .toList(growable: false),
+    };
+  }
+
   @override
   void initState() {
     super.initState();
@@ -31,33 +45,31 @@ class _LegalGarageScreenState extends ConsumerState<LegalGarageScreen>
     showDocumentPreviewDialog(context, path);
   }
 
-  void _openDetail(Vehicle vehicle, LegalDocument document) {
+  void _openDetail(String vehicleId, LegalDocument document) {
     CustomNavigator().push(
       context,
-      DocumentDetailScreen(vehicleId: vehicle.id, documentId: document.id),
+      DocumentDetailScreen(vehicleId: vehicleId, documentId: document.id),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    Vehicle? vehicle = ref.watch(selectedVehicleProvider);
-    if (vehicle == null) {
+    String? vehicleId = ref.watch(
+      selectedVehicleProvider.select((Vehicle? v) => v?.id),
+    );
+    if (vehicleId == null) {
       return const Center(
         child: Text('Agrega un vehículo para ver su documentación.'),
       );
     }
 
     AsyncValue<List<LegalDocument>> documentsAsync = ref.watch(
-      legalDocumentsProvider(vehicle.id),
+      legalDocumentsProvider(vehicleId),
     );
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       floatingActionButton: FloatingActionButton(
-        // Ver comentario en fuel_metrics_screen.dart: tag único por tab
-        // porque AppShell mantiene todos los tabs montados en un
-        // IndexedStack (todos los FAB sin tag comparten el mismo tag
-        // implícito).
         heroTag: 'fab-register-document',
         onPressed: () =>
             CustomNavigator().push(context, const RegisterDocumentScreen()),
@@ -71,21 +83,16 @@ class _LegalGarageScreenState extends ConsumerState<LegalGarageScreen>
           ),
           Expanded(
             child: documentsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const LegalDocumentsSkeleton(),
               error: (Object error, _) => Center(child: Text('Error: $error')),
               data: (List<LegalDocument> documents) => TabBarView(
                 controller: _tabController,
                 children: <Widget>[
                   for (final String group in _tabGroups)
                     _DocumentGroupList(
-                      documents: documents
-                          .where(
-                            (LegalDocument d) =>
-                                d.documentType.garageTabGroup == group,
-                          )
-                          .toList(),
+                      documents: _groupsFor(documents)[group]!,
                       onPreview: _previewDocument,
-                      onTap: (LegalDocument d) => _openDetail(vehicle, d),
+                      onTap: (LegalDocument d) => _openDetail(vehicleId, d),
                     ),
                 ],
               ),
@@ -115,15 +122,34 @@ class _DocumentGroupList extends ConsumerStatefulWidget {
 class _DocumentGroupListState extends ConsumerState<_DocumentGroupList> {
   static const Logger _log = Logger('DocumentGroupList');
 
-  // Igual que FuelHistorySliver: se oculta de inmediato al deslizar y solo se
-  // revierte si el borrado remoto falla.
   final Set<String> _removedIds = <String>{};
+
+  late List<LegalDocument> _visible;
+
+  @override
+  void initState() {
+    super.initState();
+    _recomputeVisible();
+  }
+
+  @override
+  void didUpdateWidget(covariant _DocumentGroupList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.documents, widget.documents)) {
+      _removedIds.clear();
+      _recomputeVisible();
+    }
+  }
+
+  void _recomputeVisible() {
+    _visible = widget.documents
+        .where((LegalDocument d) => !_removedIds.contains(d.id))
+        .toList(growable: false);
+  }
 
   @override
   Widget build(BuildContext context) {
-    List<LegalDocument> visible = widget.documents
-        .where((LegalDocument d) => !_removedIds.contains(d.id))
-        .toList();
+    List<LegalDocument> visible = _visible;
     if (visible.isEmpty) {
       return const Center(
         child: Text(
@@ -132,23 +158,24 @@ class _DocumentGroupListState extends ConsumerState<_DocumentGroupList> {
         ),
       );
     }
-    return ListView(
+    return ListView.builder(
       padding: const EdgeInsets.all(16),
-      children: <Widget>[
-        for (final LegalDocument d in visible)
-          Dismissible(
-            key: ValueKey<String>(d.id),
-            direction: DismissDirection.endToStart,
-            background: _deleteSwipeBackground(),
-            confirmDismiss: (_) => _confirmDelete(context, d),
-            onDismissed: (_) => _deleteDocument(d),
-            child: DocumentExpirationCountdown(
-              document: d,
-              onTapPreview: () => widget.onPreview(d),
-              onTap: () => widget.onTap(d),
-            ),
+      itemCount: visible.length,
+      itemBuilder: (BuildContext context, int index) {
+        LegalDocument d = visible[index];
+        return Dismissible(
+          key: ValueKey<String>(d.id),
+          direction: DismissDirection.endToStart,
+          background: _deleteSwipeBackground(),
+          confirmDismiss: (_) => _confirmDelete(context, d),
+          onDismissed: (_) => _deleteDocument(d),
+          child: DocumentExpirationCountdown(
+            document: d,
+            onTapPreview: () => widget.onPreview(d),
+            onTap: () => widget.onTap(d),
           ),
-      ],
+        );
+      },
     );
   }
 
@@ -194,17 +221,20 @@ class _DocumentGroupListState extends ConsumerState<_DocumentGroupList> {
   }
 
   Future<void> _deleteDocument(LegalDocument document) async {
-    setState(() => _removedIds.add(document.id));
+    setState(() {
+      _removedIds.add(document.id);
+      _recomputeVisible();
+    });
     try {
       await ref.read(legalDocumentActionsProvider).delete(document);
       if (mounted) showSuccessSnackBar(context, 'Documento eliminado');
     } catch (e) {
       _log.error('_deleteDocument(${document.id}): $e');
-      // El borrado remoto falló: se revierte el ocultamiento optimista para
-      // que el documento vuelva a aparecer, en vez de quedar "eliminado"
-      // solo en la UI mientras sigue existiendo en el repositorio.
       if (mounted) {
-        setState(() => _removedIds.remove(document.id));
+        setState(() {
+          _removedIds.remove(document.id);
+          _recomputeVisible();
+        });
         showErrorSnackBar(context, 'No se pudo eliminar el documento.');
       }
     }

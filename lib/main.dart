@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -40,7 +42,8 @@ Future<void> main() async {
   );
 
   ProviderContainer container = ProviderContainer();
-  await container.read(notificationServiceProvider).init();
 
   runApp(UncontrolledProviderScope(container: container, child: const App()));
+  
+  unawaited(container.read(notificationServiceProvider).init());
 }

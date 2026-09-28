@@ -39,7 +39,7 @@ class AnimationRoute extends PageRouteBuilder<Widget> {
     CustomNavigationAnimation animationType =
         CustomNavigationAnimation.slideRight,
   }) : super(
-         transitionDuration: const Duration(milliseconds: 500),
+         transitionDuration: const Duration(milliseconds: 300),
          pageBuilder:
              (
                BuildContext context,
@@ -54,35 +54,36 @@ class AnimationRoute extends PageRouteBuilder<Widget> {
                Widget child,
              ) => switch (animationType) {
                CustomNavigationAnimation.fade => FadeTransition(
-                 opacity: Tween<double>(begin: 0, end: 1).animate(animation),
+                 opacity: animation,
                  child: child,
                ),
                CustomNavigationAnimation.slideRight => SlideTransition(
-                 position: Tween<Offset>(
-                   begin: const Offset(1, 0),
-                   end: Offset.zero,
-                 ).animate(animation),
+                 position: animation.drive(_slideFromRight),
                  child: child,
                ),
                CustomNavigationAnimation.scale => ScaleTransition(
-                 scale: Tween<double>(begin: 0.5, end: 1).animate(animation),
+                 scale: animation.drive(_scaleUp),
                  child: child,
                ),
                CustomNavigationAnimation.scaleFade => ScaleTransition(
-                 scale: Tween<double>(begin: 0.5, end: 1).animate(animation),
-                 child: FadeTransition(
-                   opacity: Tween<double>(begin: 0, end: 1).animate(animation),
-                   child: child,
-                 ),
+                 scale: animation.drive(_scaleUp),
+                 child: FadeTransition(opacity: animation, child: child),
                ),
                CustomNavigationAnimation.slideBottom => SlideTransition(
-                 position: Tween<Offset>(
-                   begin: const Offset(0, 1),
-                   end: Offset.zero,
-                 ).animate(animation),
+                 position: animation.drive(_slideFromBottom),
                  child: child,
                ),
              },
        );
   final Widget page;
+
+  static final Tween<Offset> _slideFromRight = Tween<Offset>(
+    begin: const Offset(1, 0),
+    end: Offset.zero,
+  );
+  static final Tween<Offset> _slideFromBottom = Tween<Offset>(
+    begin: const Offset(0, 1),
+    end: Offset.zero,
+  );
+  static final Tween<double> _scaleUp = Tween<double>(begin: 0.5, end: 1);
 }

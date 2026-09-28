@@ -22,19 +22,24 @@ class NotificationReconciler {
       document,
       now: now,
     );
-    for (ScheduledReminder reminder in reminders) {
-      await _notificationService.scheduleAt(reminder);
-    }
+    await Future.wait(reminders.map(_notificationService.scheduleAt));
   }
 
   Future<void> cancelForDocument(LegalDocument document) =>
       _cancelExisting(document);
 
-  Future<void> _cancelExisting(LegalDocument document) async {
-    for (int offset in kDocumentReminderOffsetsDays) {
-      await _notificationService.cancel(reminderIdFor(document.id, offset));
-    }
-  }
+  Future<void> _cancelExisting(LegalDocument document) => Future.wait(
+    kDocumentReminderOffsetsDays.map(
+      (int offset) =>
+          _notificationService.cancel(reminderIdFor(document.id, offset)),
+    ),
+  );
+
+  /// Cola de reconciliaciones: cada corrida espera a que termine la
+  /// anterior. Evita que dos corridas se intercalen (ej. la del arranque y
+  /// un toggle en Settings), lo que podía dejar recordatorios agendados con
+  /// las notificaciones desactivadas.
+  Future<void> _queue = Future<void>.value();
 
   /// Cancela todo y reprograma desde cero a partir de los documentos
   /// existentes en el repositorio de Supabase. Se ejecuta al iniciar la app
@@ -43,18 +48,33 @@ class NotificationReconciler {
   Future<void> reconcileAll({
     required DateTime now,
     required bool notificationsEnabled,
+  }) {
+    Future<void> run = _queue
+        .catchError((Object _) {})
+        .then(
+          (_) => _reconcileAll(
+            now: now,
+            notificationsEnabled: notificationsEnabled,
+          ),
+        );
+    _queue = run;
+    return run;
+  }
+
+  Future<void> _reconcileAll({
+    required DateTime now,
+    required bool notificationsEnabled,
   }) async {
     await _notificationService.cancelAll();
     if (!notificationsEnabled) return;
     List<LegalDocument> documents = await _legalDocumentRepository.getAll();
-    for (LegalDocument document in documents) {
-      List<ScheduledReminder> reminders = planRemindersForDocument(
-        document,
-        now: now,
-      );
-      for (ScheduledReminder reminder in reminders) {
-        await _notificationService.scheduleAt(reminder);
-      }
-    }
+    await Future.wait(<Future<void>>[
+      for (LegalDocument document in documents)
+        for (ScheduledReminder reminder in planRemindersForDocument(
+          document,
+          now: now,
+        ))
+          _notificationService.scheduleAt(reminder),
+    ]);
   }
 }

@@ -40,13 +40,14 @@ class _SchematicRingState extends State<SchematicRing>
       child: Stack(
         alignment: Alignment.center,
         children: <Widget>[
-          AnimatedBuilder(
-            animation: _ctrl,
-            builder: (_, __) => Transform.rotate(
-              angle: _ctrl.value * 2 * math.pi,
-              child: CustomPaint(
-                size: Size(outerSize, outerSize),
-                painter: _DashedCirclePainter(),
+          RepaintBoundary(
+            child: RotationTransition(
+              turns: _ctrl,
+              child: RepaintBoundary(
+                child: CustomPaint(
+                  size: Size(outerSize, outerSize),
+                  painter: const _DashedCirclePainter(),
+                ),
               ),
             ),
           ),
@@ -58,6 +59,8 @@ class _SchematicRingState extends State<SchematicRing>
 }
 
 class _DashedCirclePainter extends CustomPainter {
+  const _DashedCirclePainter();
+
   @override
   void paint(Canvas canvas, Size size) {
     Paint paint = Paint()

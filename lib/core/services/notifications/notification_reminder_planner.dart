@@ -2,8 +2,19 @@ part of com.auto_log_mi_nave_ota_labs.app.services;
 
 /// Id determinístico por (documento, offset): estable entre reprogramaciones
 /// del mismo documento, lo que hace seguro cancelar-por-id.
-int reminderIdFor(String documentId, int offsetDays) =>
-    (documentId.hashCode ^ offsetDays).abs() % 0x7FFFFFFF;
+///
+/// Usa FNV-1a (32 bits) en vez de `String.hashCode`: Dart no garantiza que
+/// `hashCode` sea igual entre ejecuciones ni plataformas, y un id distinto
+/// tras reiniciar la app haría que cancelar-por-id no encontrara los
+/// recordatorios ya agendados.
+int reminderIdFor(String documentId, int offsetDays) {
+  int hash = 0x811C9DC5;
+  for (int unit in '$documentId:$offsetDays'.codeUnits) {
+    hash ^= unit;
+    hash = (hash * 0x01000193) & 0xFFFFFFFF;
+  }
+  return hash & 0x7FFFFFFF;
+}
 
 /// Genera los recordatorios de un documento, filtrando cualquier fecha ya
 /// pasada respecto a [now] (p. ej. al editar un documento que vence en 10

@@ -12,7 +12,8 @@ class SupabaseLegalDocumentRepository implements LegalDocumentRepository {
     List<Map<String, dynamic>> rows = await _schema
         .from('legal_documents')
         .select()
-        .eq('vehicle_id', vehicleId);
+        .eq('vehicle_id', vehicleId)
+        .order('expiration_date', ascending: true);
     return rows.map(LegalDocument.fromJson).toList(growable: false);
   }
 
@@ -21,9 +22,11 @@ class SupabaseLegalDocumentRepository implements LegalDocumentRepository {
     // Sin filtro por vehicle_id: RLS ya limita las filas devueltas a los
     // vehículos del usuario autenticado (ver policy
     // legal_documents_select_own en supabase/sql/0004_legal_documents.sql).
+    // Solo las columnas que usa la reconciliación de notificaciones (y las
+    // obligatorias de `LegalDocument.fromJson`); el resto llega `null`.
     List<Map<String, dynamic>> rows = await _schema
         .from('legal_documents')
-        .select();
+        .select('id, vehicle_id, document_type, expiration_date');
     return rows.map(LegalDocument.fromJson).toList(growable: false);
   }
 

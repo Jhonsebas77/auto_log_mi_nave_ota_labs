@@ -134,8 +134,8 @@ void main() {
   });
 
   test(
-    'FuelLogActions.create llama bumpOdometerIfHigher e invalida '
-    'fuelLogsProvider(vehicleId) y vehiclesProvider',
+    'FuelLogActions.create llama bumpOdometerIfHigher, invalida '
+    'fuelLogsProvider(vehicleId) y parchea vehiclesProvider sin refetch',
     () async {
       // Fuerza el primer build de ambos providers antes de crear el
       // tanqueo, para tener una línea base de cuántas veces se llamó cada
@@ -150,13 +150,16 @@ void main() {
       expect(fuelLogRepo.createCalls, 1);
       expect(vehicleRepo.bumpCalls, 1);
 
-      // Si de verdad se invalidaron, leerlos otra vez dispara un rebuild
-      // real (una llamada nueva al repositorio) en vez de devolver el
-      // valor cacheado.
-      await container.read(vehiclesProvider.future);
+      // fuelLogsProvider se invalidó: leerlo otra vez dispara un rebuild
+      // real (una llamada nueva al repositorio).
       await container.read(fuelLogsProvider(vehicleId).future);
-      expect(vehicleRepo.getByUserCalls, 2);
       expect(fuelLogRepo.getByVehicleCalls, 2);
+
+      // vehiclesProvider NO se vuelve a pedir: se parchea con la fila que
+      // devuelve bumpOdometerIfHigher.
+      List<Vehicle> vehicles = await container.read(vehiclesProvider.future);
+      expect(vehicleRepo.getByUserCalls, 1);
+      expect(vehicles.single.currentOdometer, 1500);
     },
   );
 

@@ -90,11 +90,12 @@ class _RegisterFuelScreenState extends ConsumerState<RegisterFuelScreen> {
     List<FuelLog> logs,
     int currentOdometer,
   ) {
-    List<FuelLog> sorted = <FuelLog>[...logs]
-      ..sort((FuelLog a, FuelLog b) => a.date.compareTo(b.date));
+    // `logs` ya llega ascendente por fecha desde el servidor (ver
+    // `SupabaseFuelLogRepository.getByVehicle`): no hace falta copiarla y
+    // reordenarla en cada validación.
     FuelLog? prev;
     FuelLog? next;
-    for (FuelLog log in sorted) {
+    for (FuelLog log in logs) {
       if (!log.date.isAfter(_date)) {
         prev = log;
       } else {

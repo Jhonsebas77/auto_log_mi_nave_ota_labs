@@ -5,17 +5,19 @@ class MaintenanceScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    Vehicle? vehicle = ref.watch(selectedVehicleProvider);
-    if (vehicle == null) {
+    String? vehicleId = ref.watch(
+      selectedVehicleProvider.select((Vehicle? v) => v?.id),
+    );
+    if (vehicleId == null) {
       return const Center(
         child: Text('Agrega un vehículo para ver su mantenimiento.'),
       );
     }
 
     AsyncValue<List<MaintenanceRecord>> recordsAsync = ref.watch(
-      maintenanceRecordsProvider(vehicle.id),
+      maintenanceRecordsProvider(vehicleId),
     );
-    List<LifespanStatus> lifespans = ref.watch(lifespanProvider(vehicle.id));
+    List<LifespanStatus> lifespans = ref.watch(lifespanProvider(vehicleId));
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -26,11 +28,11 @@ class MaintenanceScreen extends ConsumerWidget {
         // implícito).
         heroTag: 'fab-register-maintenance',
         onPressed: () =>
-        CustomNavigator().push(context, const RegisterMaintenanceScreen()),
+            CustomNavigator().push(context, const RegisterMaintenanceScreen()),
         child: const Icon(Icons.add),
       ),
       body: recordsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const MaintenanceSkeleton(),
         error: (Object error, _) => Center(child: Text('Error: $error')),
         data: (List<MaintenanceRecord> records) => CustomScrollView(
           slivers: <Widget>[

@@ -132,4 +132,45 @@ class Vehicle {
   String get displayName => (nickname == null || nickname!.trim().isEmpty)
       ? '$brand $model $year'
       : nickname!.trim();
+
+  /// Igualdad por valor: cada refetch de `vehiclesProvider` produce
+  /// instancias nuevas, y sin esto Riverpod no puede saber que nada cambió
+  /// — `selectedVehicleProvider` y todo lo que lo observa (los 5 tabs del
+  /// `IndexedStack`) se reconstruiría igual en cada invalidación.
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Vehicle &&
+          id == other.id &&
+          userId == other.userId &&
+          licensePlate == other.licensePlate &&
+          brand == other.brand &&
+          model == other.model &&
+          year == other.year &&
+          fuelType == other.fuelType &&
+          currentOdometer == other.currentOdometer &&
+          createdAt == other.createdAt &&
+          updatedAt == other.updatedAt &&
+          color == other.color &&
+          photoUrl == other.photoUrl &&
+          nickname == other.nickname &&
+          tankCapacityGallons == other.tankCapacityGallons;
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    userId,
+    licensePlate,
+    brand,
+    model,
+    year,
+    fuelType,
+    currentOdometer,
+    createdAt,
+    updatedAt,
+    color,
+    photoUrl,
+    nickname,
+    tankCapacityGallons,
+  );
 }

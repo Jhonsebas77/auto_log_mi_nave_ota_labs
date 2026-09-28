@@ -10,7 +10,12 @@ part of com.auto_log_mi_nave_ota_labs.app.ui.views;
 /// escritorio el sidebar completo (sin TopAppBar, el logo y Ajustes viven en
 /// el sidebar). En tablet/escritorio el contenido de los tabs se centra con
 /// un ancho máximo de [Breakpoints.contentMaxWidth].
-class AppShell extends ConsumerWidget {
+///
+/// Los tabs se construyen de forma perezosa: un tab no se monta (ni dispara
+/// sus consultas a Supabase) hasta la primera vez que se abre, y a partir de
+/// ahí queda montado para conservar su estado. Los tabs fuera de pantalla
+/// tienen los tickers pausados ([TickerMode]).
+class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
 
   static const int quickActionsIndex = 4;
@@ -24,14 +29,33 @@ class AppShell extends ConsumerWidget {
   ];
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends ConsumerState<AppShell> {
+  final Set<int> _visitedTabs = <int>{};
+
+  @override
+  Widget build(BuildContext context) {
     int tabIndex = ref.watch(selectedTabIndexProvider);
+    _visitedTabs.add(tabIndex);
     WindowSize windowSize = Breakpoints.windowSizeOf(context);
     void openSettings() =>
         CustomNavigator().push(context, const SettingsScreen());
     void selectTab(int index) =>
         ref.read(selectedTabIndexProvider.notifier).current = index;
-    Widget tabs = IndexedStack(index: tabIndex, children: _tabs);
+    Widget tabs = IndexedStack(
+      index: tabIndex,
+      children: <Widget>[
+        for (int i = 0; i < AppShell._tabs.length; i++)
+          TickerMode(
+            enabled: i == tabIndex,
+            child: _visitedTabs.contains(i)
+                ? AppShell._tabs[i]
+                : const SizedBox.shrink(),
+          ),
+      ],
+    );
 
     if (windowSize == WindowSize.compact) {
       return BlueprintScaffold(
@@ -40,8 +64,8 @@ class AppShell extends ConsumerWidget {
         bottomNavigationBar: BlueprintBottomNavBar(
           currentIndex: tabIndex,
           onDestinationSelected: selectTab,
-          quickActionsSelected: tabIndex == quickActionsIndex,
-          onQuickActionsTap: () => selectTab(quickActionsIndex),
+          quickActionsSelected: tabIndex == AppShell.quickActionsIndex,
+          onQuickActionsTap: () => selectTab(AppShell.quickActionsIndex),
         ),
       );
     }
@@ -56,8 +80,8 @@ class AppShell extends ConsumerWidget {
             extended: expanded,
             currentIndex: tabIndex,
             onDestinationSelected: selectTab,
-            quickActionsSelected: tabIndex == quickActionsIndex,
-            onQuickActionsTap: () => selectTab(quickActionsIndex),
+            quickActionsSelected: tabIndex == AppShell.quickActionsIndex,
+            onQuickActionsTap: () => selectTab(AppShell.quickActionsIndex),
             onSettingsTap: openSettings,
           ),
           Expanded(

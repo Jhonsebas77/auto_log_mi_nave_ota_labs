@@ -3,7 +3,6 @@ library com.auto_log_mi_nave_ota_labs.app.core.providers;
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/misc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sb;
 
 import '../constants/constants.dart';

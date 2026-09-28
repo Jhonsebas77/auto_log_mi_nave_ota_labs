@@ -58,7 +58,8 @@ class DividerPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    Paint paint() => Paint()
+    // Un solo Paint para todos los trazos (antes se creaba uno por guion).
+    Paint paint = Paint()
       ..color = color!
       ..strokeWidth = thickness;
 
@@ -72,7 +73,7 @@ class DividerPainter extends CustomPainter {
           canvas.drawLine(
             Offset(size.width * 0.50, startY),
             Offset(size.width * 0.50, startY + dashWidth),
-            paint(),
+            paint,
           );
           double space = dashSpace + dashWidth;
           startY += space;
@@ -83,7 +84,7 @@ class DividerPainter extends CustomPainter {
           canvas.drawLine(
             Offset(startX, size.height * 0.50),
             Offset(startX + dashWidth, size.height * 0.50),
-            paint(),
+            paint,
           );
           double space = dashSpace + dashWidth;
           startX += space;
@@ -95,13 +96,13 @@ class DividerPainter extends CustomPainter {
         canvas.drawLine(
           Offset(size.width * 0.50, startY),
           Offset(size.width * 0.50, lineSize!),
-          paint(),
+          paint,
         );
       } else {
         canvas.drawLine(
           Offset(startX, size.height * 0.50),
           Offset(lineSize!, size.height * 0.50),
-          paint(),
+          paint,
         );
       }
     }
@@ -114,7 +115,8 @@ class DividerPainter extends CustomPainter {
       dashSpace != oldDelegate.dashSpace ||
       thickness != oldDelegate.thickness ||
       isDash != oldDelegate.isDash ||
-      isVertical != oldDelegate.isVertical;
+      isVertical != oldDelegate.isVertical ||
+      lineSize != oldDelegate.lineSize;
 }
 
 class CustomDividerWithLabel extends StatelessWidget {

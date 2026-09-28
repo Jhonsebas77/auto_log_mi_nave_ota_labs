@@ -1,22 +1,11 @@
 part of com.auto_log_mi_nave_ota_labs.app.core.providers;
 
 // ignore: always_specify_types
-final legalDocumentsProvider =
-    FutureProvider.family<List<LegalDocument>, String>(
+final legalDocumentsProvider = FutureProvider.autoDispose
+    .family<List<LegalDocument>, String>(
       (Ref ref, String vehicleId) =>
           ref.watch(legalDocumentRepositoryProvider).getByVehicle(vehicleId),
     );
-
-// ignore: always_specify_types
-final documentStatusProvider = Provider.family<TrafficLightLevel, String>((
-  Ref ref,
-  String vehicleId,
-) {
-  List<LegalDocument> documents =
-      ref.watch(legalDocumentsProvider(vehicleId)).value ??
-      const <LegalDocument>[];
-  return worstStatusLevel(documents, DateTime.now());
-});
 
 class LegalDocumentActions {
   LegalDocumentActions(this._ref);

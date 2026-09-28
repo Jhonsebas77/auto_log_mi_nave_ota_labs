@@ -18,13 +18,33 @@ class _ServiceHistorySegmentedListState
     extends State<ServiceHistorySegmentedList> {
   MaintenanceServiceType? _filter;
 
+  // Igual que FuelHistorySliver: se filtra al cambiar los registros o el
+  // filtro, no en cada build.
+  late List<MaintenanceRecord> _filtered;
+
   @override
-  Widget build(BuildContext context) {
-    List<MaintenanceRecord> filtered = widget.records
+  void initState() {
+    super.initState();
+    _recomputeFiltered();
+  }
+
+  @override
+  void didUpdateWidget(covariant ServiceHistorySegmentedList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.records, widget.records)) _recomputeFiltered();
+  }
+
+  void _recomputeFiltered() {
+    _filtered = widget.records
         .where(
           (MaintenanceRecord r) => _filter == null || r.serviceType == _filter,
         )
-        .toList();
+        .toList(growable: false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    List<MaintenanceRecord> filtered = _filtered;
     return SliverMainAxisGroup(
       slivers: <Widget>[
         SliverToBoxAdapter(
@@ -48,7 +68,10 @@ class _ServiceHistorySegmentedListState
                 ],
                 selected: <MaintenanceServiceType?>{_filter},
                 onSelectionChanged: (Set<MaintenanceServiceType?> s) =>
-                    setState(() => _filter = s.first),
+                    setState(() {
+                      _filter = s.first;
+                      _recomputeFiltered();
+                    }),
               ),
               const SizedBox(height: 12),
             ],

@@ -9,7 +9,7 @@ class DashboardScreen extends ConsumerWidget {
     AsyncValue<List<Vehicle>> vehiclesAsync = ref.watch(vehiclesProvider);
 
     return vehiclesAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const DashboardSkeleton(),
       error: (Object error, _) => Center(child: Text('Error: $error')),
       data: (List<Vehicle> vehicles) {
         if (vehicles.isEmpty) {

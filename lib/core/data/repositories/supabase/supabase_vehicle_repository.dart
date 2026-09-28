@@ -5,9 +5,8 @@ class SupabaseVehicleRepository implements VehicleRepository {
   /// `public` — debe estar en la lista de "Exposed schemas" del proyecto
   /// (Project Settings → API), si no toda consulta falla con "The schema
   /// must be one of the following: public". Ver `supabase/sql/0001_vehicles.sql`.
-  SupabaseQuerySchema get _schema => Supabase.instance.client.schema(
-    'auto_log',
-  );
+  SupabaseQuerySchema get _schema =>
+      Supabase.instance.client.schema('auto_log');
 
   /// Payload de escritura: igual a [Vehicle.toJson] pero sin `updated_at`,
   /// que siempre lo controla el trigger `trg_vehicles_updated_at` en la DB
@@ -53,20 +52,24 @@ class SupabaseVehicleRepository implements VehicleRepository {
 
   @override
   Future<Vehicle> bumpOdometerIfHigher(String vehicleId, int odometer) async {
+    // Un solo round-trip en el caso normal: el UPDATE condicional
+    // (`current_odometer < odometer`) solo toca la fila si el nuevo valor
+    // es mayor, y devuelve la fila actualizada. Solo si no se actualizó
+    // nada (el odómetro ya era igual o mayor) hace falta leer la actual.
+    Map<String, dynamic>? updatedRow = await _schema
+        .from('vehicles')
+        .update(<String, dynamic>{'current_odometer': odometer})
+        .eq('id', vehicleId)
+        .lt('current_odometer', odometer)
+        .select()
+        .maybeSingle();
+    if (updatedRow != null) return Vehicle.fromJson(updatedRow);
+
     Map<String, dynamic> currentRow = await _schema
         .from('vehicles')
         .select()
         .eq('id', vehicleId)
         .single();
-    Vehicle current = Vehicle.fromJson(currentRow);
-    if (odometer <= current.currentOdometer) return current;
-
-    Map<String, dynamic> updatedRow = await _schema
-        .from('vehicles')
-        .update(<String, dynamic>{'current_odometer': odometer})
-        .eq('id', vehicleId)
-        .select()
-        .single();
-    return Vehicle.fromJson(updatedRow);
+    return Vehicle.fromJson(currentRow);
   }
 }

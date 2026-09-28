@@ -16,50 +16,53 @@ class CornerBrackets extends StatelessWidget {
   final double strokeWidth;
 
   @override
-  Widget build(BuildContext context) => Stack(
-    children: <Widget>[
-      Positioned(
-        top: inset,
-        left: inset,
-        child: _Bracket(
-          size: size,
-          color: color.withAlpha(100),
-          strokeWidth: strokeWidth,
-          corners: const <_Corner>{_Corner.topLeft},
+  Widget build(BuildContext context) {
+    Color bracketColor = color.withAlpha(100);
+    return Stack(
+      children: <Widget>[
+        Positioned(
+          top: inset,
+          left: inset,
+          child: _Bracket(
+            size: size,
+            color: bracketColor,
+            strokeWidth: strokeWidth,
+            corners: const <_Corner>{_Corner.topLeft},
+          ),
         ),
-      ),
-      Positioned(
-        top: inset,
-        right: inset,
-        child: _Bracket(
-          size: size,
-          color: color.withAlpha(100),
-          strokeWidth: strokeWidth,
-          corners: const <_Corner>{_Corner.topRight},
+        Positioned(
+          top: inset,
+          right: inset,
+          child: _Bracket(
+            size: size,
+            color: bracketColor,
+            strokeWidth: strokeWidth,
+            corners: const <_Corner>{_Corner.topRight},
+          ),
         ),
-      ),
-      Positioned(
-        bottom: inset,
-        left: inset,
-        child: _Bracket(
-          size: size,
-          color: color.withAlpha(100),
-          strokeWidth: strokeWidth,
-          corners: const <_Corner>{_Corner.bottomLeft},
+        Positioned(
+          bottom: inset,
+          left: inset,
+          child: _Bracket(
+            size: size,
+            color: bracketColor,
+            strokeWidth: strokeWidth,
+            corners: const <_Corner>{_Corner.bottomLeft},
+          ),
         ),
-      ),
-      Positioned(
-        bottom: inset,
-        right: inset,
-        child: _Bracket(
-          size: size,
-          color: color.withAlpha(100),
-          strokeWidth: strokeWidth,
-          corners: const <_Corner>{_Corner.bottomRight},
+        Positioned(
+          bottom: inset,
+          right: inset,
+          child: _Bracket(
+            size: size,
+            color: bracketColor,
+            strokeWidth: strokeWidth,
+            corners: const <_Corner>{_Corner.bottomRight},
+          ),
         ),
-      ),
-    ],
-  );
+      ],
+    );
+  }
 }
 
 enum _Corner { topLeft, topRight, bottomLeft, bottomRight }

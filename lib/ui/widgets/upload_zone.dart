@@ -34,20 +34,18 @@ class UploadZone extends StatelessWidget {
             ? Row(
                 children: <Widget>[
                   if (_isImage(filePath!))
-                    ClipRRect(
-                      child: SignedAttachmentImage(
-                        path: filePath!,
-                        width: 48,
-                        height: 48,
-                        fit: BoxFit.cover,
-                        // Adjuntos viejos guardados como ruta local (antes de
-                        // subir a Supabase Storage) pueden ya no existir en
-                        // disco — se muestra un ícono en vez de crashear.
-                        errorBuilder: (_, __, ___) => const Icon(
-                          Icons.broken_image_outlined,
-                          color: BlueprintColors.textMuted,
-                          size: 32,
-                        ),
+                    SignedAttachmentImage(
+                      path: filePath!,
+                      width: 48,
+                      height: 48,
+                      fit: BoxFit.cover,
+                      // Adjuntos viejos guardados como ruta local (antes de
+                      // subir a Supabase Storage) pueden ya no existir en
+                      // disco — se muestra un ícono en vez de crashear.
+                      errorBuilder: (_, __, ___) => const Icon(
+                        Icons.broken_image_outlined,
+                        color: BlueprintColors.textMuted,
+                        size: 32,
                       ),
                     )
                   else
