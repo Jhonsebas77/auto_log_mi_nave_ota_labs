@@ -20,11 +20,52 @@ class _LoginScreenState extends State<LoginScreen> {
   String _version = '...';
   String _buildNumber = '...';
 
+  // Espera tras varios intentos fallidos (ver LoginThrottleController):
+  // el botón queda deshabilitado con una cuenta regresiva.
+  Timer? _cooldownTimer;
+  DateTime? _lockedUntil;
+  Duration _cooldown = Duration.zero;
+
   @override
   void initState() {
     super.initState();
     _initPackageInfo();
+    // La espera vive en un provider, así que sobrevive a que esta pantalla
+    // se vuelva a montar (ej. tras un logout).
+    _syncCooldown();
   }
+
+  void _syncCooldown() {
+    _lockedUntil = ProviderScope.containerOf(
+      context,
+      listen: false,
+    ).read(loginThrottleProvider).lockedUntil;
+    _cooldownTimer?.cancel();
+    _cooldownTimer = null;
+    _tickCooldown();
+    if (_cooldown > Duration.zero) {
+      _cooldownTimer = Timer.periodic(
+        const Duration(seconds: 1),
+        (_) => _tickCooldown(),
+      );
+    }
+  }
+
+  void _tickCooldown() {
+    DateTime? until = _lockedUntil;
+    Duration remaining = until == null
+        ? Duration.zero
+        : until.difference(DateTime.now());
+    if (remaining <= Duration.zero) {
+      remaining = Duration.zero;
+      _cooldownTimer?.cancel();
+      _cooldownTimer = null;
+    }
+    if (!mounted) return;
+    setState(() => _cooldown = remaining);
+  }
+
+  bool get _isCoolingDown => _cooldown > Duration.zero;
 
   Future<void> _initPackageInfo() async {
     PackageInfo info = await PackageInfo.fromPlatform();
@@ -55,6 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
   /// ya hace signInWithPassword contra Supabase y devuelve `null` si el login
   /// fue exitoso, o un mensaje de error listo para mostrar si no.
   Future<void> _login() async {
+    if (_isLoading || _isCoolingDown) return;
     // Se lee el container antes del primer `await` para no usar `context`
     // después de un gap async.
     AuthController auth = ProviderScope.containerOf(
@@ -75,6 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
 
     if (!mounted) return;
+    _syncCooldown();
 
     if (error == null) {
       showSuccessSnackBar(context, 'Login successfully');
@@ -88,6 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
+    _cooldownTimer?.cancel();
     _passwordController.dispose();
     _passwordFocus.dispose();
     super.dispose();
@@ -383,7 +427,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildActionButton() => SizedBox(
     width: double.infinity,
     child: ElevatedButton(
-      onPressed: _isLoading ? null : _login,
+      onPressed: _isLoading || _isCoolingDown ? null : _login,
       style: ElevatedButton.styleFrom(
         backgroundColor: BlueprintColors.accentOrange,
         foregroundColor: BlueprintColors.onAccent,
@@ -393,7 +437,29 @@ class _LoginScreenState extends State<LoginScreen> {
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
         side: const BorderSide(color: BlueprintColors.accentOrange, width: 1),
       ),
-      child: _isLoading
+      child: _isCoolingDown
+          ? Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                const Icon(
+                  Icons.lock_clock,
+                  size: 16,
+                  color: BlueprintColors.onAccent,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'RETRY_IN ${(_cooldown.inMilliseconds / 1000).ceil()}s',
+                  style: const TextStyle(
+                    fontFamily: 'JetBrainsMono',
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 2.5,
+                    color: BlueprintColors.onAccent,
+                  ),
+                ),
+              ],
+            )
+          : _isLoading
           ? const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[

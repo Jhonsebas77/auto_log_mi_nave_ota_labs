@@ -1,53 +1,60 @@
 part of com.auto_log_mi_nave_ota_labs.app.ui.views;
 
-class QuickActionsScreen extends StatelessWidget {
+class QuickActionsScreen extends ConsumerWidget {
   const QuickActionsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(24),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: Breakpoints.formMaxWidth),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            const Text(
-              'Acciones Rápidas',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.titleLarge,
-            ),
-            const SizedBox(height: 24),
-            _ActionCard(
-              icon: Icons.local_gas_station,
-              label: 'Registrar Tanqueo',
-              onTap: () =>
-                  CustomNavigator().push(context, const RegisterFuelScreen()),
-            ),
-            const SizedBox(height: 12),
-            _ActionCard(
-              icon: Icons.build_circle,
-              label: 'Registrar Mantenimiento',
-              onTap: () => CustomNavigator().push(
-                context,
-                const RegisterMaintenanceScreen(),
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Se oculta mientras el módulo de mantenimientos no esté disponible
+    // (ver maintenanceAvailableProvider).
+    bool maintenanceAvailable = ref.watch(maintenanceAvailableProvider);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: Breakpoints.formMaxWidth),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              const Text(
+                'Acciones Rápidas',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.titleLarge,
               ),
-            ),
-            const SizedBox(height: 12),
-            _ActionCard(
-              icon: Icons.gavel,
-              label: 'Registrar Documento',
-              onTap: () => CustomNavigator().push(
-                context,
-                const RegisterDocumentScreen(),
+              const SizedBox(height: 24),
+              _ActionCard(
+                icon: Icons.local_gas_station,
+                label: 'Registrar Tanqueo',
+                onTap: () =>
+                    CustomNavigator().push(context, const RegisterFuelScreen()),
               ),
-            ),
-          ],
+              if (maintenanceAvailable) ...<Widget>[
+                const SizedBox(height: 12),
+                _ActionCard(
+                  icon: Icons.build_circle,
+                  label: 'Registrar Mantenimiento',
+                  onTap: () => CustomNavigator().push(
+                    context,
+                    const RegisterMaintenanceScreen(),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
+              _ActionCard(
+                icon: Icons.gavel,
+                label: 'Registrar Documento',
+                onTap: () => CustomNavigator().push(
+                  context,
+                  const RegisterDocumentScreen(),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _ActionCard extends StatelessWidget {

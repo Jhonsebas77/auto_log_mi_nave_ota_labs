@@ -1,11 +1,38 @@
 part of com.auto_log_mi_nave_ota_labs.app.core.providers;
 
+const Logger _maintenanceLog = Logger('MaintenanceProviders');
+
+/// Sin reintentos automáticos (Riverpod 3 reintenta por defecto con
+/// backoff): mientras la tabla `maintenances` no esté disponible en
+/// Supabase, cada reintento fallaría igual. El tab de Taller muestra un
+/// estado de "no disponible" con un botón para reintentar a mano.
 // ignore: always_specify_types
 final maintenanceRecordsProvider = FutureProvider.autoDispose
-    .family<List<MaintenanceRecord>, String>(
-      (Ref ref, String vehicleId) =>
-          ref.watch(maintenanceRepositoryProvider).getByVehicle(vehicleId),
-    );
+    .family<List<MaintenanceRecord>, String>((Ref ref, String vehicleId) async {
+      try {
+        return await ref
+            .watch(maintenanceRepositoryProvider)
+            .getByVehicle(vehicleId);
+      } catch (e) {
+        _maintenanceLog.error('maintenanceRecordsProvider($vehicleId): $e');
+        rethrow;
+      }
+    }, retry: (int retryCount, Object error) => null);
+
+/// Si se puede registrar mantenimiento para el vehículo actual: solo
+/// `true` cuando [maintenanceRecordsProvider] respondió con datos. Mientras
+/// carga, o si falla (hoy, porque el módulo aún no está habilitado en
+/// Supabase), es `false`, y las entradas al formulario (botón + de Taller y
+/// la acción rápida) se ocultan — guardar fallaría igual.
+final Provider<bool> maintenanceAvailableProvider = Provider.autoDispose<bool>((
+  Ref ref,
+) {
+  String? vehicleId = ref.watch(
+    selectedVehicleProvider.select((Vehicle? v) => v?.id),
+  );
+  if (vehicleId == null) return false;
+  return ref.watch(maintenanceRecordsProvider(vehicleId)).hasValue;
+});
 
 // ignore: always_specify_types
 final lifespanProvider = Provider.autoDispose

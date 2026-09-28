@@ -161,6 +161,13 @@ class AuthController extends Notifier<AuthState> {
     if (email.trim().isEmpty || password.isEmpty) {
       return 'Ingresa correo y contraseña.';
     }
+    // Freno de UX (ver LoginThrottleState): mientras dure la espera no se
+    // llama a Supabase.
+    LoginThrottleController throttle = ref.read(loginThrottleProvider.notifier);
+    Duration remaining = ref
+        .read(loginThrottleProvider)
+        .remaining(DateTime.now());
+    if (remaining > Duration.zero) return loginCooldownMessage(remaining);
     try {
       sb.AuthResponse response = await _auth.signInWithPassword(
         email: hardcodedEmail.trim(),
@@ -168,11 +175,31 @@ class AuthController extends Notifier<AuthState> {
       );
       sb.User? user = response.user;
       if (user == null) return 'No fue posible iniciar sesión.';
+      throttle.reset();
       state = AuthState.authenticated(_toAppUser(user));
       await _afterAuthenticated();
       return null;
     } on sb.AuthException catch (e) {
-      if (e.statusCode == '400') return 'Correo o contraseña incorrectos.';
+      // Supabase rechazó por exceso de intentos (rate limit de GoTrue).
+      if (e.statusCode == '429' || e.code == 'over_request_rate_limit') {
+        _log.error('login: rate limited (${e.code})');
+        DateTime now = DateTime.now();
+        throttle.registerRateLimited(now);
+        return loginCooldownMessage(
+          ref.read(loginThrottleProvider).remaining(now),
+        );
+      }
+      if (e.statusCode == '400') {
+        // Solo cuentan los fallos de credenciales: un error de red no es un
+        // intento de adivinar la contraseña.
+        DateTime now = DateTime.now();
+        throttle.registerFailure(now);
+        Duration cooldown = ref.read(loginThrottleProvider).remaining(now);
+        return cooldown > Duration.zero
+            ? 'Correo o contraseña incorrectos. '
+                  '${loginCooldownMessage(cooldown)}'
+            : 'Correo o contraseña incorrectos.';
+      }
       _log.error('login: ${e.message}');
       return 'Lo sentimos, hubo un error.';
     } catch (e) {
