@@ -207,14 +207,12 @@ class _DocumentFormSectionState extends ConsumerState<DocumentFormSection> {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: <Widget>[
-      DropdownButtonFormField<DocumentType>(
-        initialValue: _type,
-        decoration: const InputDecoration(label: Text('Tipo de documento')),
-        items: <DropdownMenuItem<DocumentType>>[
-          for (final DocumentType t in DocumentType.values)
-            DropdownMenuItem<DocumentType>(value: t, child: Text(t.label)),
-        ],
-        onChanged: (DocumentType? t) => setState(() => _type = t ?? _type),
+      BlueprintDropdownField<DocumentType>(
+        label: 'Tipo de documento',
+        value: _type,
+        items: DocumentType.values,
+        itemLabel: (DocumentType t) => t.label,
+        onChanged: (DocumentType t) => setState(() => _type = t),
       ),
       const SizedBox(height: 16),
       ListTile(

@@ -9,17 +9,22 @@ class UploadZone extends StatelessWidget {
     required this.onTap,
     super.key,
     this.label = 'Adjuntar documento',
+    this.loading = false,
   });
 
   final String? filePath;
   final VoidCallback onTap;
   final String label;
 
+  /// Mientras se sube un archivo: muestra un indicador de progreso e ignora
+  /// los toques, para no lanzar una segunda subida en paralelo.
+  final bool loading;
+
   @override
   Widget build(BuildContext context) {
     bool hasFile = filePath != null;
     return InkWell(
-      onTap: onTap,
+      onTap: loading ? null : onTap,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(16),
@@ -30,7 +35,22 @@ class UploadZone extends StatelessWidget {
                 : BlueprintColors.outlineVariant,
           ),
         ),
-        child: hasFile
+        child: loading
+            ? const Column(
+                children: <Widget>[
+                  SizedBox(
+                    height: 28,
+                    width: 28,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: BlueprintColors.accentOrange,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text('Subiendo...', style: AppTextStyles.bodySmall),
+                ],
+              )
+            : hasFile
             ? Row(
                 children: <Widget>[
                   if (_isImage(filePath!))

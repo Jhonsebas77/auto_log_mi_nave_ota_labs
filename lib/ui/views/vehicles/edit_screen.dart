@@ -8,6 +8,11 @@ part of com.auto_log_mi_nave_ota_labs.app.ui.views;
 /// Wrapper fino sobre [VehicleFormScreen]: resuelve el único caso de borde
 /// propio de "editar" (que el vehículo no se encuentre) y, si lo encuentra,
 /// delega el formulario.
+///
+/// El vehículo se fija la primera vez que la lista está cargada: si se
+/// volviera a buscar en cada build, guardar el formulario (que actualiza
+/// [vehiclesProvider]) le cambiaría el `initial` al formulario en medio de
+/// la salida.
 class EditVehicleScreen extends ConsumerStatefulWidget {
   const EditVehicleScreen({required this.vehicleId, super.key});
 
@@ -18,28 +23,32 @@ class EditVehicleScreen extends ConsumerStatefulWidget {
 }
 
 class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
+  static const String _title = 'Editar Vehículo';
   Vehicle? _original;
-
-  @override
-  void initState() {
-    super.initState();
-    List<Vehicle> vehicles =
-        ref.read(vehiclesProvider).value ?? const <Vehicle>[];
-    Vehicle? vehicle;
-    for (Vehicle v in vehicles) {
-      if (v.id == widget.vehicleId) {
-        vehicle = v;
-        break;
-      }
-    }
-    _original = vehicle;
-  }
+  bool _resolved = false;
 
   @override
   Widget build(BuildContext context) {
-    if (_original == null) {
+    if (!_resolved) {
+      AsyncValue<List<Vehicle>> vehicles = ref.watch(vehiclesProvider);
+      if (!vehicles.hasValue && !vehicles.hasError) {
+        return const BlueprintScaffold(
+          appBar: BlueprintFormAppBar(title: _title),
+          body: Center(child: CircularProgressIndicator()),
+        );
+      }
+      _resolved = true;
+      for (Vehicle v in vehicles.value ?? const <Vehicle>[]) {
+        if (v.id == widget.vehicleId) {
+          _original = v;
+          break;
+        }
+      }
+    }
+    Vehicle? original = _original;
+    if (original == null) {
       return const BlueprintScaffold(
-        appBar: BlueprintFormAppBar(title: 'Editar Vehículo'),
+        appBar: BlueprintFormAppBar(title: _title),
         body: Center(
           child: Text(
             'No se encontró el vehículo.',
@@ -48,6 +57,6 @@ class _EditVehicleScreenState extends ConsumerState<EditVehicleScreen> {
         ),
       );
     }
-    return VehicleFormScreen(initial: _original);
+    return VehicleFormScreen(initial: original);
   }
 }

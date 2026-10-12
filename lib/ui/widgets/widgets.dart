@@ -26,6 +26,8 @@ part 'auth/scanline_overlay.dart';
 part 'auth/schematic_ring.dart';
 part 'blueprint_theme/bottom_nav_bar.dart';
 part 'blueprint_theme/color_picker.dart';
+part 'blueprint_theme/discard_changes_dialog.dart';
+part 'blueprint_theme/dropdown_field.dart';
 part 'blueprint_theme/form_app_bar.dart';
 part 'blueprint_theme/form_body.dart';
 part 'blueprint_theme/primary_button.dart';
