@@ -282,7 +282,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildTitle() => Column(
     children: <Widget>[
       const Text(
-        'MI_NAVE',
+        'AUTO_LOG',
         style: TextStyle(
           fontFamily: 'JetBrainsMono',
           color: BlueprintColors.accentOrange,

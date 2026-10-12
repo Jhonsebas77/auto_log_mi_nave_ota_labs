@@ -17,7 +17,7 @@ class _LockedThrottleController extends LoginThrottleController {
 void main() {
   setUpAll(() {
     PackageInfo.setMockInitialValues(
-      appName: 'Mi Nave',
+      appName: 'AUTO_LOG',
       packageName: 'test',
       version: '1.0.0',
       buildNumber: '1',

@@ -7,7 +7,7 @@ class BlueprintTopAppBar extends StatelessWidget
     implements PreferredSizeWidget {
   const BlueprintTopAppBar({
     super.key,
-    this.headline = 'MI_NAVE',
+    this.headline = 'AUTO_LOG',
     this.onSettingsTap,
   });
 

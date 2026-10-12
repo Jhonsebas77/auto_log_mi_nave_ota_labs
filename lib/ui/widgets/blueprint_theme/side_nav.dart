@@ -16,7 +16,7 @@ class BlueprintSideNav extends StatelessWidget {
     required this.onQuickActionsTap,
     super.key,
     this.extended = false,
-    this.headline = 'MI_NAVE',
+    this.headline = 'AUTO_LOG',
     this.onSettingsTap,
   });
 

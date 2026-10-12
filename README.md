@@ -1,4 +1,4 @@
-# Mi Nave — Auto Log
+# Auto Log
 
 A Flutter app to keep a vehicle's paperwork and running costs in one place:
 fuel logs and consumption, legal documents (SOAT, RTM, taxes…), maintenance
@@ -166,7 +166,7 @@ Platform notes:
   inexact alarms, so no exact-alarm permission is needed.
 - **iOS.** The deployment target is 13.0. Notification permission is
   requested after the first login.
-- **Web.** The PWA manifest is named "Mi Nave". Local notifications aren't
+- **Web.** The PWA manifest is named "AutoLog". Local notifications aren't
   available on web.
 
 ### Splash screen

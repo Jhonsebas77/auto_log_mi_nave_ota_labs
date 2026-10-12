@@ -1,11 +1,11 @@
 {
-    "name": "Mi Nave",
-    "short_name": "Mi Nave",
+    "name": "AUTO_LOG",
+    "short_name": "AUTO_LOG",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "Mi Nave: registro y seguimiento de vehículos (tanqueos, mantenimientos, documentos legales y pico y placa).",
+    "description": "AUTO_LOG: registro y seguimiento de vehículos (tanqueos, mantenimientos, documentos legales y pico y placa).",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

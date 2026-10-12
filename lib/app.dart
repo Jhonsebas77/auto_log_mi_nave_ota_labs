@@ -9,8 +9,8 @@ class App extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => MaterialApp(
-    title: 'Mi Nave',
-    debugShowCheckedModeBanner: false,
+    title: 'Auto Log - Mi Nave',
+    debugShowCheckedModeBanner: true,
     theme: appTheme,
     darkTheme: appDarkTheme,
     themeMode: ThemeMode.system,
