@@ -49,6 +49,7 @@ Other behavior:
 | Charts / animation | `fl_chart`, `flutter_animate`, `shimmer` (loading skeletons) |
 | Notifications | `flutter_local_notifications` + `timezone` |
 | Files | `image_picker`, `file_picker` |
+| Splash screen | `flutter_native_splash` (see [Splash screen](#splash-screen)) |
 | Misc | `intl`, `uuid`, `recase`, `package_info_plus` |
 
 ## Project structure
@@ -167,6 +168,25 @@ Platform notes:
   requested after the first login.
 - **Web.** The PWA manifest is named "Mi Nave". Local notifications aren't
   available on web.
+
+### Splash screen
+
+The native splash (Android and iOS) is generated with
+[`flutter_native_splash`](https://pub.dev/packages/flutter_native_splash)
+from the `flutter_native_splash:` section of `pubspec.yaml`: the `#0b1623`
+theme background with `assets/splash.png` and `assets/branding.png` at the
+bottom. Don't add a `flutter_native_splash.yaml` file: if it exists, the
+generator reads it and ignores the `pubspec.yaml` section.
+
+After changing that section or the images, regenerate the native files:
+
+```bash
+dart run flutter_native_splash:create
+```
+
+The generator also reindents `ios/Runner/Info.plist`. The only key it
+actually needs there is `UIStatusBarHidden = false`. Reinstall the app to
+see the new splash.
 
 ## Quality checks
 
