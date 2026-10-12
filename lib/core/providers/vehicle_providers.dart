@@ -1,11 +1,18 @@
 part of com.auto_log_mi_nave_ota_labs.app.core.providers;
 
+const Logger _vehiclesLog = Logger('VehiclesNotifier');
+
 class VehiclesNotifier extends AsyncNotifier<List<Vehicle>> {
   @override
   Future<List<Vehicle>> build() async {
     String? userId = ref.watch(authControllerProvider).user?.id;
     if (userId == null) return const <Vehicle>[];
-    return ref.read(vehicleRepositoryProvider).getByUser(userId);
+    try {
+      return await ref.read(vehicleRepositoryProvider).getByUser(userId);
+    } catch (e) {
+      _vehiclesLog.error('getByUser($userId): $e');
+      rethrow;
+    }
   }
 
   Future<void> addVehicle(Vehicle vehicle) async {

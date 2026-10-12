@@ -85,10 +85,7 @@ void main() {
         dangerDoc,
       ];
       List<LegalDocument> reversed = ordered.reversed.toList();
-      expect(
-        worstStatusLevel(reversed, now),
-        worstStatusLevel(ordered, now),
-      );
+      expect(worstStatusLevel(reversed, now), worstStatusLevel(ordered, now));
       expect(worstStatusLevel(reversed, now), TrafficLightLevel.danger);
     });
   });

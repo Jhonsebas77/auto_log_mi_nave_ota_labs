@@ -77,10 +77,7 @@ class LicensePlateRestrictionCard extends StatelessWidget {
           const SizedBox(height: 16),
           const Divider(color: BlueprintColors.outlineVariant, height: 1),
           const SizedBox(height: 16),
-          _PicoYPlacaMetric(
-            label: 'FRANJA',
-            value: rule?.horarioLabel ?? '-',
-          ),
+          _PicoYPlacaMetric(label: 'FRANJA', value: rule?.horarioLabel ?? '-'),
           const SizedBox(height: 12),
           Row(
             children: <Widget>[
@@ -137,9 +134,7 @@ class LicensePlateRestrictionCard extends StatelessWidget {
       context: context,
       backgroundColor: BlueprintColors.surfaceContainerLow,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      shape: kSharpShape,
       builder: (BuildContext context) => LicensePlateRestrictionScheduleSheet(
         schedule: result.schedule,
         plateDigit: result.plateDigit,

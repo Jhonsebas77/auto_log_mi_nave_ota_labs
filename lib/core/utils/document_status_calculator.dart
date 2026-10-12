@@ -25,3 +25,21 @@ TrafficLightLevel worstStatusLevel(
   }
   return worst;
 }
+
+/// Documento vigente de cada tipo: el de vencimiento más lejano. Al renovar
+/// (p. ej. un SOAT nuevo) el anterior puede seguir registrado, y como el
+/// repositorio los devuelve por vencimiento ascendente, tomar el primero de
+/// cada tipo mostraba el vencido.
+Map<DocumentType, LegalDocument> latestDocumentByType(
+  List<LegalDocument> documents,
+) {
+  Map<DocumentType, LegalDocument> latest = <DocumentType, LegalDocument>{};
+  for (LegalDocument document in documents) {
+    LegalDocument? current = latest[document.documentType];
+    if (current == null ||
+        document.expirationDate.isAfter(current.expirationDate)) {
+      latest[document.documentType] = document;
+    }
+  }
+  return latest;
+}

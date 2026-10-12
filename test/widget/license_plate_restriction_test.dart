@@ -36,10 +36,7 @@ void main() {
 
         await tester.pumpWidget(
           _wrap(
-            LicensePlateRestrictionCard(
-              result: result,
-              licensePlate: 'ABC125',
-            ),
+            LicensePlateRestrictionCard(result: result, licensePlate: 'ABC125'),
           ),
         );
 
@@ -75,10 +72,7 @@ void main() {
 
         await tester.pumpWidget(
           _wrap(
-            LicensePlateRestrictionCard(
-              result: result,
-              licensePlate: 'ABC123',
-            ),
+            LicensePlateRestrictionCard(result: result, licensePlate: 'ABC123'),
           ),
         );
 
@@ -94,34 +88,31 @@ void main() {
       },
     );
 
-    testWidgets(
-      'placa sin dígitos: dígito "—" y sin restricción calculada',
-      (WidgetTester tester) async {
-        await tester.binding.setSurfaceSize(const Size(400, 600));
-        addTearDown(() => tester.binding.setSurfaceSize(null));
+    testWidgets('placa sin dígitos: dígito "—" y sin restricción calculada', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(400, 600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
 
-        LicensePlateRestrictionResult result = isVehicleRestrictedToday(
-          licensePlate: 'ABC',
-          today: DateTime.utc(2026, 8, 17),
-        );
-        expect(result.plateDigit, isNull);
+      LicensePlateRestrictionResult result = isVehicleRestrictedToday(
+        licensePlate: 'ABC',
+        today: DateTime.utc(2026, 8, 17),
+      );
+      expect(result.plateDigit, isNull);
 
-        await tester.pumpWidget(
-          _wrap(
-            LicensePlateRestrictionCard(result: result, licensePlate: 'ABC'),
-          ),
-        );
+      await tester.pumpWidget(
+        _wrap(LicensePlateRestrictionCard(result: result, licensePlate: 'ABC')),
+      );
 
-        expect(find.text('Puedes circular hoy'), findsOneWidget);
-        expect(find.text('—'), findsOneWidget);
-        expect(
-          find.text('Los lunes se restringen los dígitos 5 y 8.'),
-          findsOneWidget,
-        );
-        // Sin dígito no hay nada que calcular: se asume hoy libre.
-        expect(find.text('Hoy'), findsOneWidget);
-      },
-    );
+      expect(find.text('Puedes circular hoy'), findsOneWidget);
+      expect(find.text('—'), findsOneWidget);
+      expect(
+        find.text('Los lunes se restringen los dígitos 5 y 8.'),
+        findsOneWidget,
+      );
+      // Sin dígito no hay nada que calcular: se asume hoy libre.
+      expect(find.text('Hoy'), findsOneWidget);
+    });
 
     testWidgets(
       'muestra el aviso de tabla desactualizada cuando el schedule está stale',
@@ -139,10 +130,7 @@ void main() {
 
         await tester.pumpWidget(
           _wrap(
-            LicensePlateRestrictionCard(
-              result: result,
-              licensePlate: 'ABC125',
-            ),
+            LicensePlateRestrictionCard(result: result, licensePlate: 'ABC125'),
           ),
         );
 
@@ -198,10 +186,7 @@ void main() {
 
         await tester.pumpWidget(
           _wrap(
-            LicensePlateRestrictionCard(
-              result: result,
-              licensePlate: 'ABC125',
-            ),
+            LicensePlateRestrictionCard(result: result, licensePlate: 'ABC125'),
           ),
         );
 
@@ -209,38 +194,32 @@ void main() {
       },
     );
 
-    testWidgets(
-      'fin de semana: sin regla aplicable muestra "-" en franja y el '
-      'mensaje genérico',
-      (WidgetTester tester) async {
-        await tester.binding.setSurfaceSize(const Size(400, 600));
-        addTearDown(() => tester.binding.setSurfaceSize(null));
+    testWidgets('fin de semana: sin regla aplicable muestra "-" en franja y el '
+        'mensaje genérico', (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(400, 600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
 
-        // Sábado 2026-08-22: no hay regla para fin de semana.
-        LicensePlateRestrictionResult result = isVehicleRestrictedToday(
-          licensePlate: 'ABC123',
-          today: DateTime.utc(2026, 8, 22),
-        );
-        expect(result.ruleApplied, isNull);
+      // Sábado 2026-08-22: no hay regla para fin de semana.
+      LicensePlateRestrictionResult result = isVehicleRestrictedToday(
+        licensePlate: 'ABC123',
+        today: DateTime.utc(2026, 8, 22),
+      );
+      expect(result.ruleApplied, isNull);
 
-        await tester.pumpWidget(
-          _wrap(
-            LicensePlateRestrictionCard(
-              result: result,
-              licensePlate: 'ABC123',
-            ),
-          ),
-        );
+      await tester.pumpWidget(
+        _wrap(
+          LicensePlateRestrictionCard(result: result, licensePlate: 'ABC123'),
+        ),
+      );
 
-        expect(find.text('Puedes circular hoy'), findsOneWidget);
-        expect(
-          find.text('Hoy no aplica restricción de pico y placa.'),
-          findsOneWidget,
-        );
-        expect(find.text('-'), findsOneWidget);
-        expect(find.text('Hoy'), findsOneWidget);
-      },
-    );
+      expect(find.text('Puedes circular hoy'), findsOneWidget);
+      expect(
+        find.text('Hoy no aplica restricción de pico y placa.'),
+        findsOneWidget,
+      );
+      expect(find.text('-'), findsOneWidget);
+      expect(find.text('Hoy'), findsOneWidget);
+    });
 
     testWidgets(
       'toca "Ver calendario del mes" y abre la hoja con el calendario '
@@ -259,10 +238,7 @@ void main() {
 
         await tester.pumpWidget(
           _wrap(
-            LicensePlateRestrictionCard(
-              result: result,
-              licensePlate: 'ABC125',
-            ),
+            LicensePlateRestrictionCard(result: result, licensePlate: 'ABC125'),
           ),
         );
 
@@ -282,46 +258,45 @@ void main() {
   });
 
   group('LicensePlateRestrictionScheduleSheet', () {
-    testWidgets(
-      'lista los 5 días con regla y los 2 días de fin de semana sin '
-      'restricción, sin resaltar ningún día cuando plateDigit es null',
-      (WidgetTester tester) async {
-        await tester.binding.setSurfaceSize(const Size(400, 800));
-        addTearDown(() => tester.binding.setSurfaceSize(null));
+    testWidgets('lista los 5 días con regla y los 2 días de fin de semana sin '
+        'restricción, sin resaltar ningún día cuando plateDigit es null', (
+      WidgetTester tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
 
-        await tester.pumpWidget(
-          _wrap(
-            LicensePlateRestrictionScheduleSheet(
-              schedule: picoYPlacaMedellin2026S2,
-              plateDigit: null,
-            ),
+      await tester.pumpWidget(
+        _wrap(
+          LicensePlateRestrictionScheduleSheet(
+            schedule: picoYPlacaMedellin2026S2,
+            plateDigit: null,
           ),
-        );
+        ),
+      );
 
-        expect(
-          find.text('Días con restricción · Medellín y Valle de Aburrá'),
-          findsOneWidget,
-        );
-        expect(
-          find.text('Vigente 2026-2 · Segundo semestre 2026'),
-          findsOneWidget,
-        );
+      expect(
+        find.text('Días con restricción · Medellín y Valle de Aburrá'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Vigente 2026-2 · Segundo semestre 2026'),
+        findsOneWidget,
+      );
 
-        for (String dayLabel in spanishWeekdayLabels) {
-          expect(find.text(dayLabel), findsOneWidget);
-        }
+      for (String dayLabel in spanishWeekdayLabels) {
+        expect(find.text(dayLabel), findsOneWidget);
+      }
 
-        expect(find.text('[5, 8] · 5:00 a.m. - 8:00 p.m.'), findsOneWidget);
-        expect(find.text('[1, 4] · 5:00 a.m. - 8:00 p.m.'), findsOneWidget);
-        expect(find.text('[0, 2] · 5:00 a.m. - 8:00 p.m.'), findsOneWidget);
-        expect(find.text('[3, 6] · 5:00 a.m. - 8:00 p.m.'), findsOneWidget);
-        expect(find.text('[7, 9] · 5:00 a.m. - 8:00 p.m.'), findsOneWidget);
-        expect(find.text('Sin restricción'), findsNWidgets(2));
+      expect(find.text('[5, 8] · 5:00 a.m. - 8:00 p.m.'), findsOneWidget);
+      expect(find.text('[1, 4] · 5:00 a.m. - 8:00 p.m.'), findsOneWidget);
+      expect(find.text('[0, 2] · 5:00 a.m. - 8:00 p.m.'), findsOneWidget);
+      expect(find.text('[3, 6] · 5:00 a.m. - 8:00 p.m.'), findsOneWidget);
+      expect(find.text('[7, 9] · 5:00 a.m. - 8:00 p.m.'), findsOneWidget);
+      expect(find.text('Sin restricción'), findsNWidgets(2));
 
-        expect(find.text('TU DÍA'), findsNothing);
-        expect(find.byIcon(Icons.block), findsNothing);
-      },
-    );
+      expect(find.text('TU DÍA'), findsNothing);
+      expect(find.byIcon(Icons.block), findsNothing);
+    });
 
     testWidgets(
       'resalta con la insignia "TU DÍA" y el ícono de bloqueo el día del '

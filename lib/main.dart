@@ -44,6 +44,6 @@ Future<void> main() async {
   ProviderContainer container = ProviderContainer();
 
   runApp(UncontrolledProviderScope(container: container, child: const App()));
-  
+
   unawaited(container.read(notificationServiceProvider).init());
 }

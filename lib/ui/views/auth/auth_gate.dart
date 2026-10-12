@@ -22,9 +22,7 @@ class AuthGate extends ConsumerWidget {
       // limpia solo el stack cuando cambia el estado de auth.
       if (previous?.status == AuthStatus.authenticated &&
           next.status != AuthStatus.authenticated) {
-        Navigator.of(
-          context,
-        ).popUntil((Route<dynamic> route) => route.isFirst);
+        Navigator.of(context).popUntil((Route<dynamic> route) => route.isFirst);
       }
 
       // Sesión cerrada por el propio AuthController (ej. no se pudo

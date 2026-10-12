@@ -163,27 +163,24 @@ void main() {
     },
   );
 
-  test(
-    'FuelLogActions.delete solo invalida fuelLogsProvider(vehicleId), '
-    'no vehiclesProvider',
-    () async {
-      FuelLog created = await container
-          .read(fuelLogRepositoryProvider)
-          .create(fuelLog());
-      await container.read(fuelLogsProvider(vehicleId).future);
-      await container.read(vehiclesProvider.future);
-      expect(fuelLogRepo.getByVehicleCalls, 1);
-      expect(vehicleRepo.getByUserCalls, 1);
+  test('FuelLogActions.delete solo invalida fuelLogsProvider(vehicleId), '
+      'no vehiclesProvider', () async {
+    FuelLog created = await container
+        .read(fuelLogRepositoryProvider)
+        .create(fuelLog());
+    await container.read(fuelLogsProvider(vehicleId).future);
+    await container.read(vehiclesProvider.future);
+    expect(fuelLogRepo.getByVehicleCalls, 1);
+    expect(vehicleRepo.getByUserCalls, 1);
 
-      await container.read(fuelLogActionsProvider).delete(created);
+    await container.read(fuelLogActionsProvider).delete(created);
 
-      await container.read(fuelLogsProvider(vehicleId).future);
-      expect(fuelLogRepo.getByVehicleCalls, 2);
+    await container.read(fuelLogsProvider(vehicleId).future);
+    expect(fuelLogRepo.getByVehicleCalls, 2);
 
-      // vehiclesProvider no se invalida en delete(): sigue con el valor
-      // cacheado, sin una llamada nueva al repositorio.
-      await container.read(vehiclesProvider.future);
-      expect(vehicleRepo.getByUserCalls, 1);
-    },
-  );
+    // vehiclesProvider no se invalida en delete(): sigue con el valor
+    // cacheado, sin una llamada nueva al repositorio.
+    await container.read(vehiclesProvider.future);
+    expect(vehicleRepo.getByUserCalls, 1);
+  });
 }

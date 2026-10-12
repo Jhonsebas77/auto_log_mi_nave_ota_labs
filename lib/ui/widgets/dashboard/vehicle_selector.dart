@@ -172,10 +172,7 @@ class _PlateBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-    decoration: BoxDecoration(
-      color: Colors.black.withValues(alpha: 0.45),
-      borderRadius: BorderRadius.circular(8),
-    ),
+    color: Colors.black.withValues(alpha: 0.45),
     child: Text(
       licensePlate,
       style: AppTextStyles.bodyMedium.copyWith(

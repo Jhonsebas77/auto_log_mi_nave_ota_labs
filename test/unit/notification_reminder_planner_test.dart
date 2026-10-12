@@ -62,16 +62,13 @@ void main() {
       },
     );
 
-    test(
-      'reminderIdFor es estable entre ejecuciones (no depende de '
-      'String.hashCode)',
-      () {
-        // Valor fijo de FNV-1a sobre "doc-1:30": si cambia, los
-        // recordatorios agendados en una versión anterior ya no se podrían
-        // cancelar por id.
-        expect(reminderIdFor('doc-1', 30), 1402836688);
-        expect(reminderIdFor('doc-1', 30), lessThanOrEqualTo(0x7FFFFFFF));
-      },
-    );
+    test('reminderIdFor es estable entre ejecuciones (no depende de '
+        'String.hashCode)', () {
+      // Valor fijo de FNV-1a sobre "doc-1:30": si cambia, los
+      // recordatorios agendados en una versión anterior ya no se podrían
+      // cancelar por id.
+      expect(reminderIdFor('doc-1', 30), 1402836688);
+      expect(reminderIdFor('doc-1', 30), lessThanOrEqualTo(0x7FFFFFFF));
+    });
   });
 }

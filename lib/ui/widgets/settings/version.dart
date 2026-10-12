@@ -40,7 +40,7 @@ class _VersionWidgetState extends State<VersionWidget> {
       child: Row(
         children: <Widget>[
           Image.asset(
-           'assets/logo_ota.png',
+            'assets/logo_ota.png',
             height: 50,
             width: 50,
             fit: BoxFit.fill,

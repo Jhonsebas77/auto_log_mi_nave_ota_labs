@@ -18,6 +18,8 @@ part of com.auto_log_mi_nave_ota_labs.app.ui.views;
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
 
+  static const int fuelIndex = 1;
+  static const int maintenanceIndex = 3;
   static const int quickActionsIndex = 4;
 
   static const List<Widget> _tabs = <Widget>[

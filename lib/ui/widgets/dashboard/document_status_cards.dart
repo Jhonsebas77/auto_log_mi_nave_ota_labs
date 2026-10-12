@@ -37,20 +37,14 @@ class DocumentStatusCards extends StatelessWidget {
   /// escritorio; 4 en fila (~290px) no alcanza para las etiquetas largas.
   static const int _columns = 2;
 
-  LegalDocument? _find(DocumentType type) {
-    for (LegalDocument d in documents) {
-      if (d.documentType == type) return d;
-    }
-    return null;
-  }
-
   @override
   Widget build(BuildContext context) {
+    Map<DocumentType, LegalDocument> latest = latestDocumentByType(documents);
     List<Widget> buildCards({required bool inRow}) => <Widget>[
       for (final DocumentType type in types)
         _DocumentStatusCard(
           type: type,
-          document: _find(type),
+          document: latest[type],
           now: now,
           onOpen: onOpen,
           onRegister: onRegister,

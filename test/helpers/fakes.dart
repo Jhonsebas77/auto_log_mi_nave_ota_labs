@@ -51,10 +51,9 @@ class FakeLegalDocumentRepository implements LegalDocumentRepository {
   final List<LegalDocument> _documents;
 
   @override
-  Future<List<LegalDocument>> getByVehicle(String vehicleId) async =>
-      _documents
-          .where((LegalDocument d) => d.vehicleId == vehicleId)
-          .toList(growable: false);
+  Future<List<LegalDocument>> getByVehicle(String vehicleId) async => _documents
+      .where((LegalDocument d) => d.vehicleId == vehicleId)
+      .toList(growable: false);
 
   @override
   Future<LegalDocument> create(LegalDocument document) async {

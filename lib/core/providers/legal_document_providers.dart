@@ -1,11 +1,19 @@
 part of com.auto_log_mi_nave_ota_labs.app.core.providers;
 
+const Logger _legalDocumentsLog = Logger('LegalDocumentProviders');
+
 // ignore: always_specify_types
 final legalDocumentsProvider = FutureProvider.autoDispose
-    .family<List<LegalDocument>, String>(
-      (Ref ref, String vehicleId) =>
-          ref.watch(legalDocumentRepositoryProvider).getByVehicle(vehicleId),
-    );
+    .family<List<LegalDocument>, String>((Ref ref, String vehicleId) async {
+      try {
+        return await ref
+            .watch(legalDocumentRepositoryProvider)
+            .getByVehicle(vehicleId);
+      } catch (e) {
+        _legalDocumentsLog.error('legalDocumentsProvider($vehicleId): $e');
+        rethrow;
+      }
+    });
 
 class LegalDocumentActions {
   LegalDocumentActions(this._ref);

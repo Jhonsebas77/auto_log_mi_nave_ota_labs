@@ -150,13 +150,11 @@ class DashboardSkeleton extends StatelessWidget {
           picoYPlacaCard,
         ],
         const SizedBox(height: 16),
-        const Row(
-          children: <Widget>[
-            Expanded(child: SkeletonBox(height: 72)),
-            SizedBox(width: 12),
-            Expanded(child: SkeletonBox(height: 72)),
-          ],
-        ),
+        // Documentos: cards 2×2 en tablet/web, grilla 2×2 de chips en móvil.
+        if (wide)
+          const SkeletonBox(height: 240)
+        else
+          const SkeletonBox(height: 84),
       ],
     );
   }
