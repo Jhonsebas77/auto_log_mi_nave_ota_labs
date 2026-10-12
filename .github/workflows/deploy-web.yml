@@ -1,0 +1,72 @@
+name: Deploy web to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.41.6
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
+      # base_path es "/<repo>" en un project site y "" con dominio propio
+      - name: Build web
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          AUTH_EMAIL: ${{ secrets.AUTH_EMAIL }}
+        run: |
+          for name in SUPABASE_URL SUPABASE_PUBLISHABLE_KEY AUTH_EMAIL; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Falta el secret $name"
+              exit 1
+            fi
+          done
+          flutter build web --release \
+            --base-href "${{ steps.pages.outputs.base_path }}/" \
+            --dart-define="SUPABASE_URL=$SUPABASE_URL" \
+            --dart-define="SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY" \
+            --dart-define="AUTH_EMAIL=$AUTH_EMAIL"
+
+      # Fallback para rutas profundas (deep links / path URL strategy)
+      - name: SPA fallback
+        run: cp build/web/index.html build/web/404.html
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
