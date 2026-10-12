@@ -26,3 +26,18 @@ const List<String> monthsInSpanish = <String>[
   'Noviembre',
   'Diciembre',
 ];
+
+const List<String> monthsInSpanishShort = <String>[
+  'ene',
+  'feb',
+  'mar',
+  'abr',
+  'may',
+  'jun',
+  'jul',
+  'ago',
+  'sep',
+  'oct',
+  'nov',
+  'dic',
+];

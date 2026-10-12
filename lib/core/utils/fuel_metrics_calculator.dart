@@ -41,7 +41,9 @@ class FuelMetrics {
 }
 
 /// Km/Gal solo entre pares consecutivos de tanqueos "tanque lleno" (design_spec:
-/// "Performance curve (Km/Gal)" con historial marcado por Full Tank badges).
+/// "Performance curve (Km/Gal)" con historial marcado por Full Tank badges),
+/// dividiendo por todos los galones cargados en ese tramo (incluye los
+/// parciales intermedios).
 /// Costo/Km usa todo el historial (incluye tanqueos parciales).
 ///
 /// [tankCapacityGallons] (opcional, del vehículo) se usa solo para derivar
@@ -57,22 +59,31 @@ FuelMetrics calculateFuelMetrics(
 }) {
   if (logsAscendingByDate.isEmpty) return FuelMetrics.empty;
 
+  // Método "tanque lleno a tanque lleno": lo consumido entre dos llenos es
+  // la suma de lo cargado después del primero — los parciales intermedios
+  // más el lleno que cierra el tramo. Usar solo los galones del lleno que
+  // cierra inflaba el km/gal cuando hubo parciales en el medio.
   List<FuelMetricsPoint> curve = <FuelMetricsPoint>[];
   FuelLog? lastFullTank;
+  double gallonsSinceLastFull = 0;
   for (FuelLog log in logsAscendingByDate) {
+    // Parciales antes del primer lleno no tienen punto de partida conocido:
+    // no se acumulan.
+    if (lastFullTank != null) gallonsSinceLastFull += log.gallons;
     if (log.isFullTank) {
       if (lastFullTank != null) {
         int distance = log.odometer - lastFullTank.odometer;
-        if (distance > 0 && log.gallons > 0) {
+        if (distance > 0 && gallonsSinceLastFull > 0) {
           curve.add(
             FuelMetricsPoint(
               date: log.date,
-              kmPerGallon: distance / log.gallons,
+              kmPerGallon: distance / gallonsSinceLastFull,
             ),
           );
         }
       }
       lastFullTank = log;
+      gallonsSinceLastFull = 0;
     }
   }
 

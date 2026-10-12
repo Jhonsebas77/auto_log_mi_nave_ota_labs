@@ -11,6 +11,7 @@ class RegisterMaintenanceScreen extends ConsumerStatefulWidget {
 
 class _RegisterMaintenanceScreenState
     extends ConsumerState<RegisterMaintenanceScreen> {
+  static const Logger _log = Logger('RegisterMaintenanceScreen');
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   MaintenanceServiceType _serviceType = MaintenanceServiceType.preventivo;
   final TextEditingController _categoryController = TextEditingController();
@@ -41,10 +42,18 @@ class _RegisterMaintenanceScreenState
   Future<void> _pickInvoice() async {
     String? userId = ref.read(authControllerProvider).user?.id;
     if (userId == null) return;
-    String? path = await ref
-        .read(attachmentPickerServiceProvider)
-        .pickImageFromCamera(userId: userId, category: 'maintenance');
-    if (path != null) setState(() => _invoicePath = path);
+    String? path;
+    try {
+      path = await ref
+          .read(attachmentPickerServiceProvider)
+          .pickImageFromCamera(userId: userId, category: 'maintenance');
+    } catch (e) {
+      _log.error('_pickInvoice: $e');
+      if (mounted) showErrorSnackBar(context, 'No se pudo subir la factura.');
+      return;
+    }
+    if (!mounted || path == null) return;
+    setState(() => _invoicePath = path);
   }
 
   Future<void> _submit(String vehicleId) async {
@@ -66,7 +75,17 @@ class _RegisterMaintenanceScreenState
           ? null
           : _notesController.text.trim(),
     );
-    await ref.read(maintenanceActionsProvider).create(record);
+    try {
+      await ref.read(maintenanceActionsProvider).create(record);
+    } catch (e) {
+      _log.error('_submit(${record.id}): $e');
+      // Se queda en la pantalla para que el usuario pueda reintentar sin
+      // perder lo que llenó.
+      if (!mounted) return;
+      setState(() => _saving = false);
+      showErrorSnackBar(context, 'No se pudo registrar el mantenimiento.');
+      return;
+    }
     if (!mounted) return;
     unawaited(Navigator.of(context).maybePop());
   }

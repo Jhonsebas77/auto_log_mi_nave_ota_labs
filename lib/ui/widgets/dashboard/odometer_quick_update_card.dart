@@ -5,6 +5,8 @@ class OdometerQuickUpdateCard extends ConsumerWidget {
 
   final Vehicle vehicle;
 
+  static const Logger _log = Logger('OdometerQuickUpdateCard');
+
   Future<void> _showUpdateDialog(BuildContext context, WidgetRef ref) async {
     TextEditingController controller = TextEditingController(
       text: vehicle.currentOdometer.toString(),
@@ -35,9 +37,16 @@ class OdometerQuickUpdateCard extends ConsumerWidget {
         ),
       );
       if (result != null && result >= vehicle.currentOdometer) {
-        await ref
-            .read(vehiclesProvider.notifier)
-            .bumpOdometer(vehicle.id, result);
+        try {
+          await ref
+              .read(vehiclesProvider.notifier)
+              .bumpOdometer(vehicle.id, result);
+        } catch (e) {
+          _log.error('bumpOdometer(${vehicle.id}): $e');
+          if (context.mounted) {
+            showErrorSnackBar(context, 'No se pudo actualizar el odómetro.');
+          }
+        }
       }
     } finally {
       controller.dispose();

@@ -3,6 +3,7 @@ part of com.auto_log_mi_nave_ota_labs.app.ui.views;
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
   static const String route = '/settings';
+  static const Logger _log = Logger('SettingsScreen');
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -46,7 +47,7 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
           OutlinedButton(
-            onPressed: () => ref.read(authControllerProvider.notifier).logout(),
+            onPressed: () => _logout(context, ref),
             child: const Text('Cerrar sesión'),
           ),
           const SizedBox(height: 24),
@@ -54,5 +55,16 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _logout(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(authControllerProvider.notifier).logout();
+    } catch (e) {
+      _log.error('_logout: $e');
+      if (context.mounted) {
+        showErrorSnackBar(context, 'No se pudo cerrar la sesión.');
+      }
+    }
   }
 }

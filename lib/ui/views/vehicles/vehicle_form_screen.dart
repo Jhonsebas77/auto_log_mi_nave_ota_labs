@@ -17,6 +17,7 @@ class VehicleFormScreen extends ConsumerStatefulWidget {
 }
 
 class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
+  static const Logger _log = Logger('VehicleFormScreen');
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   late final TextEditingController _nicknameController;
   late final TextEditingController _plateController;
@@ -83,9 +84,17 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
               leading: const Icon(Icons.camera_alt),
               title: const Text('Tomar foto'),
               onTap: () async {
-                String? p = await ref
-                    .read(attachmentPickerServiceProvider)
-                    .pickImageFromCamera(userId: userId, category: 'vehicle');
+                String? p;
+                try {
+                  p = await ref
+                      .read(attachmentPickerServiceProvider)
+                      .pickImageFromCamera(userId: userId, category: 'vehicle');
+                } catch (e) {
+                  _log.error('pickImageFromCamera: $e');
+                  if (context.mounted) {
+                    showErrorSnackBar(context, 'No se pudo subir la foto.');
+                  }
+                }
                 if (context.mounted) Navigator.pop(context, p);
               },
             ),
@@ -93,9 +102,20 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
               leading: const Icon(Icons.photo_library),
               title: const Text('Elegir de galería'),
               onTap: () async {
-                String? p = await ref
-                    .read(attachmentPickerServiceProvider)
-                    .pickImageFromGallery(userId: userId, category: 'vehicle');
+                String? p;
+                try {
+                  p = await ref
+                      .read(attachmentPickerServiceProvider)
+                      .pickImageFromGallery(
+                        userId: userId,
+                        category: 'vehicle',
+                      );
+                } catch (e) {
+                  _log.error('pickImageFromGallery: $e');
+                  if (context.mounted) {
+                    showErrorSnackBar(context, 'No se pudo subir la foto.');
+                  }
+                }
                 if (context.mounted) Navigator.pop(context, p);
               },
             ),
@@ -135,7 +155,13 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
             : _nicknameController.text.trim(),
         tankCapacityGallons: double.tryParse(_tankCapacityController.text),
       );
-      await ref.read(vehiclesProvider.notifier).addVehicle(vehicle);
+      try {
+        await ref.read(vehiclesProvider.notifier).addVehicle(vehicle);
+      } catch (e) {
+        _log.error('addVehicle(${vehicle.id}): $e');
+        _onSubmitError('No se pudo agregar el vehículo.');
+        return;
+      }
     } else {
       setState(() => _saving = true);
       Vehicle updated = original.copyWith(
@@ -156,10 +182,24 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
           double.tryParse(_tankCapacityController.text),
         ),
       );
-      await ref.read(vehiclesProvider.notifier).updateVehicle(updated);
+      try {
+        await ref.read(vehiclesProvider.notifier).updateVehicle(updated);
+      } catch (e) {
+        _log.error('updateVehicle(${updated.id}): $e');
+        _onSubmitError('No se pudo actualizar el vehículo.');
+        return;
+      }
     }
     if (!mounted) return;
     unawaited(Navigator.of(context).maybePop());
+  }
+
+  /// Se queda en el formulario (sin perder lo que se llenó) para que el
+  /// usuario pueda reintentar.
+  void _onSubmitError(String message) {
+    if (!mounted) return;
+    setState(() => _saving = false);
+    showErrorSnackBar(context, message);
   }
 
   @override

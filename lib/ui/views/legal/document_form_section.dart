@@ -39,6 +39,7 @@ class DocumentFormSection extends ConsumerStatefulWidget {
 }
 
 class _DocumentFormSectionState extends ConsumerState<DocumentFormSection> {
+  static const Logger _log = Logger('DocumentFormSection');
   late DocumentType _type;
   DateTime? _issueDate;
   late DateTime _expirationDate;
@@ -106,9 +107,17 @@ class _DocumentFormSectionState extends ConsumerState<DocumentFormSection> {
               leading: const Icon(Icons.camera_alt),
               title: const Text('Tomar foto'),
               onTap: () async {
-                String? p = await ref
-                    .read(attachmentPickerServiceProvider)
-                    .pickImageFromCamera(userId: userId, category: 'legal');
+                String? p;
+                try {
+                  p = await ref
+                      .read(attachmentPickerServiceProvider)
+                      .pickImageFromCamera(userId: userId, category: 'legal');
+                } catch (e) {
+                  _log.error('pickImageFromCamera: $e');
+                  if (context.mounted) {
+                    showErrorSnackBar(context, 'No se pudo subir el archivo.');
+                  }
+                }
                 if (context.mounted) Navigator.pop(context, p);
               },
             ),
@@ -116,9 +125,17 @@ class _DocumentFormSectionState extends ConsumerState<DocumentFormSection> {
               leading: const Icon(Icons.photo_library),
               title: const Text('Elegir de galería'),
               onTap: () async {
-                String? p = await ref
-                    .read(attachmentPickerServiceProvider)
-                    .pickImageFromGallery(userId: userId, category: 'legal');
+                String? p;
+                try {
+                  p = await ref
+                      .read(attachmentPickerServiceProvider)
+                      .pickImageFromGallery(userId: userId, category: 'legal');
+                } catch (e) {
+                  _log.error('pickImageFromGallery: $e');
+                  if (context.mounted) {
+                    showErrorSnackBar(context, 'No se pudo subir el archivo.');
+                  }
+                }
                 if (context.mounted) Navigator.pop(context, p);
               },
             ),
@@ -126,9 +143,17 @@ class _DocumentFormSectionState extends ConsumerState<DocumentFormSection> {
               leading: const Icon(Icons.picture_as_pdf),
               title: const Text('Elegir PDF'),
               onTap: () async {
-                String? p = await ref
-                    .read(attachmentPickerServiceProvider)
-                    .pickPdf(userId: userId, category: 'legal');
+                String? p;
+                try {
+                  p = await ref
+                      .read(attachmentPickerServiceProvider)
+                      .pickPdf(userId: userId, category: 'legal');
+                } catch (e) {
+                  _log.error('pickPdf: $e');
+                  if (context.mounted) {
+                    showErrorSnackBar(context, 'No se pudo subir el archivo.');
+                  }
+                }
                 if (context.mounted) Navigator.pop(context, p);
               },
             ),

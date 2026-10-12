@@ -23,6 +23,7 @@ class DocumentDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
+  static const Logger _log = Logger('DocumentDetailScreen');
   bool _editing = false;
   bool _saving = false;
 
@@ -77,7 +78,20 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
                 saving: _saving,
                 onSubmit: (LegalDocument updated) async {
                   setState(() => _saving = true);
-                  await ref.read(legalDocumentActionsProvider).update(updated);
+                  try {
+                    await ref
+                        .read(legalDocumentActionsProvider)
+                        .update(updated);
+                  } catch (e) {
+                    _log.error('update(${updated.id}): $e');
+                    if (!context.mounted) return;
+                    setState(() => _saving = false);
+                    showErrorSnackBar(
+                      context,
+                      'No se pudo actualizar el documento.',
+                    );
+                    return;
+                  }
                   if (!mounted) return;
                   setState(() {
                     _saving = false;

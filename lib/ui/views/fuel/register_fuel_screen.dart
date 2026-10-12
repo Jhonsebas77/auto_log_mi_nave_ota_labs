@@ -9,6 +9,7 @@ class RegisterFuelScreen extends ConsumerStatefulWidget {
 }
 
 class _RegisterFuelScreenState extends ConsumerState<RegisterFuelScreen> {
+  static const Logger _log = Logger('RegisterFuelScreen');
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _odometerController = TextEditingController();
   final TextEditingController _gallonsController = TextEditingController();
@@ -60,7 +61,19 @@ class _RegisterFuelScreenState extends ConsumerState<RegisterFuelScreen> {
           ? null
           : _stationController.text.trim(),
     );
-    await ref.read(fuelLogActionsProvider).create(log);
+    try {
+      await ref.read(fuelLogActionsProvider).create(log);
+    } catch (e) {
+      _log.error('_submit(${log.id}): $e');
+      // Sin este catch la excepción (p. ej. PostgrestException) escapaba
+      // del onPressed como error no manejado: no había feedback y el botón
+      // quedaba en loading para siempre. Se queda en la pantalla para que
+      // el usuario pueda reintentar sin perder lo que llenó.
+      if (!mounted) return;
+      setState(() => _saving = false);
+      showErrorSnackBar(context, 'No se pudo registrar el tanqueo.');
+      return;
+    }
     if (!mounted) return;
     unawaited(Navigator.of(context).maybePop());
   }

@@ -13,6 +13,7 @@ class RegisterDocumentScreen extends ConsumerStatefulWidget {
 
 class _RegisterDocumentScreenState
     extends ConsumerState<RegisterDocumentScreen> {
+  static const Logger _log = Logger('RegisterDocumentScreen');
   bool _saving = false;
 
   @override
@@ -30,7 +31,20 @@ class _RegisterDocumentScreenState
                 saving: _saving,
                 onSubmit: (LegalDocument document) async {
                   setState(() => _saving = true);
-                  await ref.read(legalDocumentActionsProvider).create(document);
+                  try {
+                    await ref
+                        .read(legalDocumentActionsProvider)
+                        .create(document);
+                  } catch (e) {
+                    _log.error('create(${document.id}): $e');
+                    if (!context.mounted) return;
+                    setState(() => _saving = false);
+                    showErrorSnackBar(
+                      context,
+                      'No se pudo registrar el documento.',
+                    );
+                    return;
+                  }
                   if (!context.mounted) return;
                   unawaited(Navigator.of(context).maybePop());
                 },
