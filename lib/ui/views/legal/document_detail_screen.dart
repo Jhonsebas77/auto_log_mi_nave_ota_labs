@@ -27,6 +27,7 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
   bool _editing = false;
   bool _saving = false;
   bool _dirty = false;
+  bool _deleting = false;
 
   void _startEditing() => setState(() => _editing = true);
 
@@ -39,12 +40,35 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
     });
   }
 
+  Future<void> _delete(LegalDocument document) async {
+    if (!await showDeleteDocumentDialog(context, document)) return;
+    if (!mounted) return;
+    // Se captura antes del `await`: al terminar, esta pantalla se cierra y
+    // el snackbar se muestra con el contexto del Navigator.
+    NavigatorState navigator = Navigator.of(context);
+    setState(() => _deleting = true);
+    try {
+      await ref.read(legalDocumentActionsProvider).delete(document);
+    } catch (e) {
+      _log.error('delete(${document.id}): $e');
+      if (!mounted) return;
+      setState(() => _deleting = false);
+      showErrorSnackBar(context, 'No se pudo eliminar el documento.');
+      return;
+    }
+    if (!mounted) return;
+    navigator.pop();
+    showSuccessSnackBar(navigator.context, 'Documento eliminado');
+  }
+
   @override
   Widget build(BuildContext context) {
     AsyncValue<List<LegalDocument>> documentsAsync = ref.watch(
       legalDocumentsProvider(widget.vehicleId),
     );
-    if (!documentsAsync.hasValue && !documentsAsync.hasError) {
+    // Mientras se elimina, la lista recargada ya no trae el documento: se
+    // sigue mostrando la carga en vez de "No se encontró el documento".
+    if (_deleting || (!documentsAsync.hasValue && !documentsAsync.hasError)) {
       return const BlueprintScaffold(
         appBar: BlueprintFormAppBar(title: 'Documento'),
         body: Center(child: CircularProgressIndicator()),
@@ -80,9 +104,18 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
         appBar: BlueprintFormAppBar(
           title: _editing ? 'Editar Documento' : document.documentType.label,
           actions: <Widget>[
-            if (!_editing)
-              IconButton(onPressed: _startEditing, icon: const Icon(Icons.edit))
-            else
+            if (!_editing) ...<Widget>[
+              IconButton(
+                onPressed: _startEditing,
+                tooltip: 'Editar',
+                icon: const Icon(Icons.edit),
+              ),
+              IconButton(
+                onPressed: () => _delete(document),
+                tooltip: 'Eliminar',
+                icon: const Icon(Icons.delete_outline),
+              ),
+            ] else
               TextButton(
                 onPressed: _saving ? null : _cancelEditing,
                 child: const Text('CANCELAR'),

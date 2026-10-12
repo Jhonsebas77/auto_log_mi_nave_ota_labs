@@ -55,6 +55,7 @@ part 'fuel/history_list.dart';
 part 'fuel/kpi_cards_row.dart';
 part 'fuel/performance_curve_chart.dart';
 part 'kpi_card.dart';
+part 'legal/delete_document_dialog.dart';
 part 'legal/document_expiration_countdown.dart';
 part 'legal/document_preview_dialog.dart';
 part 'lifespan_bar.dart';

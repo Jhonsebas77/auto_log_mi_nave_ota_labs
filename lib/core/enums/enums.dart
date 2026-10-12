@@ -94,23 +94,45 @@ extension DocumentTypeSql on DocumentType {
     }
   }
 
-  /// Agrupación usada por las tabs de Garaje Legal (Vehículo/Impuestos/Conductor).
-  String get garageTabGroup {
+  /// Agrupación usada por las tabs de Garaje Legal.
+  GarageTabGroup get garageTabGroup {
     switch (this) {
       case DocumentType.soat:
       case DocumentType.rtm:
       case DocumentType.polizaTodoRiesgo:
       case DocumentType.extintor:
-        return 'Vehículo';
+        return GarageTabGroup.vehiculo;
       case DocumentType.impuestoVehicular:
-        return 'Impuestos';
+        return GarageTabGroup.impuestos;
       case DocumentType.licenciaConduccion:
-        return 'Conductor';
+        return GarageTabGroup.conductor;
     }
   }
 
   static DocumentType fromSqlValue(String value) =>
       DocumentType.values.firstWhere((DocumentType e) => e.sqlValue == value);
+}
+
+/// Tabs de Garaje Legal; cada [DocumentType] pertenece a una (ver
+/// [DocumentTypeSql.garageTabGroup]).
+enum GarageTabGroup { vehiculo, impuestos, conductor }
+
+extension GarageTabGroupLabel on GarageTabGroup {
+  String get label {
+    switch (this) {
+      case GarageTabGroup.vehiculo:
+        return 'Vehículo';
+      case GarageTabGroup.impuestos:
+        return 'Impuestos';
+      case GarageTabGroup.conductor:
+        return 'Conductor';
+    }
+  }
+
+  /// Tipos de documento de la tab, en el orden de [DocumentType.values].
+  List<DocumentType> get documentTypes => DocumentType.values
+      .where((DocumentType t) => t.garageTabGroup == this)
+      .toList(growable: false);
 }
 
 enum MaintenanceServiceType { preventivo, correctivo }

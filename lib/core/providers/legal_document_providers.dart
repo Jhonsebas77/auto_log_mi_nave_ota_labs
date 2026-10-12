@@ -24,9 +24,7 @@ class LegalDocumentActions {
         .read(legalDocumentRepositoryProvider)
         .create(document);
     _ref.invalidate(legalDocumentsProvider(document.vehicleId));
-    await _ref
-        .read(notificationReconcilerProvider)
-        .rescheduleForDocument(created, now: DateTime.now());
+    await _rescheduleReminders(created);
   }
 
   Future<void> update(LegalDocument document) async {
@@ -34,15 +32,34 @@ class LegalDocumentActions {
         .read(legalDocumentRepositoryProvider)
         .update(document);
     _ref.invalidate(legalDocumentsProvider(document.vehicleId));
-    await _ref
-        .read(notificationReconcilerProvider)
-        .rescheduleForDocument(updated, now: DateTime.now());
+    await _rescheduleReminders(updated);
   }
 
   Future<void> delete(LegalDocument document) async {
     await _ref.read(legalDocumentRepositoryProvider).delete(document.id);
     _ref.invalidate(legalDocumentsProvider(document.vehicleId));
-    await _ref.read(notificationReconcilerProvider).cancelForDocument(document);
+    // El documento ya se borró: si cancelar sus recordatorios falla, no se
+    // propaga para que la UI no lo reporte como "no se pudo eliminar".
+    try {
+      await _ref
+          .read(notificationReconcilerProvider)
+          .cancelForDocument(document);
+    } catch (e) {
+      _legalDocumentsLog.error('cancelForDocument(${document.id}): $e');
+    }
+  }
+
+  /// El documento ya se guardó: si reprogramar sus recordatorios falla, no se
+  /// propaga para que la UI no lo reporte como "no se pudo guardar" (y el
+  /// usuario no lo registre dos veces).
+  Future<void> _rescheduleReminders(LegalDocument document) async {
+    try {
+      await _ref
+          .read(notificationReconcilerProvider)
+          .rescheduleForDocument(document, now: DateTime.now());
+    } catch (e) {
+      _legalDocumentsLog.error('rescheduleForDocument(${document.id}): $e');
+    }
   }
 }
 

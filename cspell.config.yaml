@@ -11,9 +11,12 @@ words:
   - Conduccion
   - crashear
   - cupertino
+  - electrico
   - friday
   - graficar
+  - hibrido
   - kilometraje
+  - loguea
   - maint
   - matchee
   - medellin
@@ -24,6 +27,7 @@ words:
   - odómetro
   - Odómetro
   - poliza
+  - precarga
   - Presentacional
   - pusheadas
   - recase
@@ -33,6 +37,7 @@ words:
   - reintentando
   - relayout
   - Renderiza
+  - reprogramar
   - riverpod
   - saturday
   - scanline
@@ -51,6 +56,7 @@ words:
   - thursday
   - tuesday
   - uuid
+  - vehiculo
   - wednesday
 ignoreWords: []
 import: []
