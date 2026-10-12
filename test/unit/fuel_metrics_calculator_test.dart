@@ -231,5 +231,56 @@ void main() {
       );
       expect(metrics.currentMonthSpent, 105000);
     });
+
+    test('cuenta tanqueos (totales y del mes) y la distancia recorrida', () {
+      List<FuelLog> logs = <FuelLog>[
+        _log(
+          date: DateTime(2026, 1, 15),
+          odometer: 1000,
+          gallons: 10,
+          totalCost: 100000,
+        ),
+        _log(
+          date: DateTime(2026, 2, 5),
+          odometer: 1100,
+          gallons: 5,
+          totalCost: 60000,
+          isFullTank: false,
+        ),
+        _log(
+          date: DateTime(2026, 2, 20),
+          odometer: 1350,
+          gallons: 5,
+          totalCost: 45000,
+        ),
+      ];
+      FuelMetrics metrics = calculateFuelMetrics(
+        logs,
+        now: DateTime(2026, 2, 28),
+      );
+      expect(metrics.fillCount, 3);
+      expect(metrics.currentMonthFillCount, 2);
+      expect(metrics.totalDistanceKm, 350);
+    });
+
+    test('distancia negativa (Odómetro mal cargado) se reporta como 0', () {
+      List<FuelLog> logs = <FuelLog>[
+        _log(
+          date: DateTime(2026, 1, 1),
+          odometer: 2000,
+          gallons: 10,
+          totalCost: 100000,
+        ),
+        _log(
+          date: DateTime(2026, 1, 10),
+          odometer: 1500,
+          gallons: 10,
+          totalCost: 100000,
+        ),
+      ];
+      FuelMetrics metrics = calculateFuelMetrics(logs);
+      expect(metrics.totalDistanceKm, 0);
+      expect(metrics.costPerKm, isNull);
+    });
   });
 }

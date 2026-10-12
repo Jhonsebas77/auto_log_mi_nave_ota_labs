@@ -194,9 +194,9 @@ class _SkeletonKpiRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) => const Row(
     children: <Widget>[
-      Expanded(child: SkeletonBox(height: 64)),
+      Expanded(child: SkeletonBox(height: 98)),
       SizedBox(width: 12),
-      Expanded(child: SkeletonBox(height: 64)),
+      Expanded(child: SkeletonBox(height: 98)),
     ],
   );
 }

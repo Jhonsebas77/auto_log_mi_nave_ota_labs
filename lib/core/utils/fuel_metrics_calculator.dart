@@ -14,6 +14,9 @@ class FuelMetrics {
     required this.totalSpent,
     required this.currentMonthSpent,
     this.estimatedRangeKm,
+    this.fillCount = 0,
+    this.currentMonthFillCount = 0,
+    this.totalDistanceKm = 0,
   });
 
   final List<FuelMetricsPoint> curve;
@@ -30,6 +33,16 @@ class FuelMetrics {
   /// averageKmPerGallon`. Nulo si el vehículo no tiene capacidad de tanque
   /// registrada o si aún no hay [averageKmPerGallon] calculado.
   final double? estimatedRangeKm;
+
+  /// Cantidad de tanqueos del historial (llenos y parciales).
+  final int fillCount;
+
+  /// Cantidad de tanqueos del mes de referencia (ver [currentMonthSpent]).
+  final int currentMonthFillCount;
+
+  /// Km recorridos entre el primer y el último tanqueo — la distancia sobre
+  /// la que se calcula [costPerKm].
+  final int totalDistanceKm;
 
   static const FuelMetrics empty = FuelMetrics(
     curve: <FuelMetricsPoint>[],
@@ -96,12 +109,16 @@ FuelMetrics calculateFuelMetrics(
   double? costPerKm = totalDistance > 0 ? totalSpent / totalDistance : null;
 
   DateTime today = now ?? DateTime.now();
-  double currentMonthSpent = logsAscendingByDate
+  List<FuelLog> currentMonthLogs = logsAscendingByDate
       .where(
         (FuelLog log) =>
             log.date.year == today.year && log.date.month == today.month,
       )
-      .fold<double>(0, (double sum, FuelLog log) => sum + log.totalCost);
+      .toList(growable: false);
+  double currentMonthSpent = currentMonthLogs.fold<double>(
+    0,
+    (double sum, FuelLog log) => sum + log.totalCost,
+  );
 
   double? averageKmPerGallon = curve.isEmpty
       ? null
@@ -123,5 +140,8 @@ FuelMetrics calculateFuelMetrics(
     totalSpent: totalSpent,
     currentMonthSpent: currentMonthSpent,
     estimatedRangeKm: estimatedRangeKm,
+    fillCount: logsAscendingByDate.length,
+    currentMonthFillCount: currentMonthLogs.length,
+    totalDistanceKm: totalDistance > 0 ? totalDistance : 0,
   );
 }
