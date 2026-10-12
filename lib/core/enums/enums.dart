@@ -155,3 +155,22 @@ enum CustomNavigationAnimation {
   scale,
   scaleFade,
 }
+
+/// Clase de tamaño de ventana para el layout adaptativo (web/tablet/móvil).
+enum WindowSize {
+  /// Móvil: bottom nav bar + contenido a una columna.
+  compact,
+
+  /// Tablet / ventana angosta: riel lateral compacto + top app bar.
+  medium,
+
+  /// Escritorio: sidebar completo (logo, labels, ajustes) sin top app bar.
+  expanded,
+}
+
+/// Esquina de un marco de `CornerBrackets` (pantalla de login).
+enum BracketCorner { topLeft, topRight, bottomLeft, bottomRight }
+
+/// Acción elegida en la hoja de adjuntos de los formularios (ver
+/// `_AttachmentUploadMixin`).
+enum AttachmentAction { camera, gallery, pdf, remove }

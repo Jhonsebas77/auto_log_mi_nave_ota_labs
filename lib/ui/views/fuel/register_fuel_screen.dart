@@ -1,5 +1,57 @@
 part of com.auto_log_mi_nave_ota_labs.app.ui.views;
 
+/// Valores del formulario ya normalizados. Implementa `==` por valor
+/// para detectar si hay cambios sin guardar.
+class _FuelFormValues {
+  const _FuelFormValues({
+    required this.date,
+    required this.odometer,
+    required this.gallons,
+    required this.totalCost,
+    required this.station,
+    required this.fullTank,
+    required this.extraFuel,
+  });
+
+  final DateTime date;
+  final int? odometer;
+  final double? gallons;
+  final int? totalCost;
+  final String? station;
+  final bool fullTank;
+  final bool extraFuel;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _FuelFormValues &&
+      other.date == date &&
+      other.odometer == odometer &&
+      other.gallons == gallons &&
+      other.totalCost == totalCost &&
+      other.station == station &&
+      other.fullTank == fullTank &&
+      other.extraFuel == extraFuel;
+
+  @override
+  int get hashCode => Object.hash(
+    date,
+    odometer,
+    gallons,
+    totalCost,
+    station,
+    fullTank,
+    extraFuel,
+  );
+}
+
+/// Tipos de combustible para los que tiene sentido distinguir corriente vs.
+/// extra al tanquear.
+const Set<FuelType> _gasolineFuelTypes = <FuelType>{
+  FuelType.gasolinaCorriente,
+  FuelType.gasolinaExtra,
+  FuelType.hibrido,
+};
+
 class RegisterFuelScreen extends ConsumerStatefulWidget {
   const RegisterFuelScreen({super.key});
   static const String route = '/fuel/register';
@@ -20,6 +72,15 @@ class _RegisterFuelScreenState extends ConsumerState<RegisterFuelScreen> {
   bool _extraFuel = false;
   bool _saving = false;
 
+  late final _FuelFormValues _initialValues;
+  bool _dirty = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialValues = _readForm();
+  }
+
   @override
   void dispose() {
     _odometerController.dispose();
@@ -27,6 +88,21 @@ class _RegisterFuelScreenState extends ConsumerState<RegisterFuelScreen> {
     _costController.dispose();
     _stationController.dispose();
     super.dispose();
+  }
+
+  _FuelFormValues _readForm() => _FuelFormValues(
+    date: _date,
+    odometer: parseGroupedInt(_odometerController.text),
+    gallons: parseDecimal(_gallonsController.text),
+    totalCost: parseGroupedInt(_costController.text),
+    station: trimmedOrNull(_stationController.text),
+    fullTank: _fullTank,
+    extraFuel: _extraFuel,
+  );
+
+  void _updateDirty() {
+    bool dirty = _readForm() != _initialValues;
+    if (dirty != _dirty) setState(() => _dirty = dirty);
   }
 
   Future<void> _pickDate() async {
@@ -38,28 +114,31 @@ class _RegisterFuelScreenState extends ConsumerState<RegisterFuelScreen> {
     );
     if (picked == null) return;
     setState(() => _date = picked);
+    _updateDirty();
+    // Los límites del odómetro dependen de la fecha (ver _odometerBounds):
+    // si ya había un error mostrado, se recalcula.
+    _formKey.currentState?.validate();
   }
 
   Future<void> _submit(String vehicleId) async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
+    _FuelFormValues values = _readForm();
     setState(() => _saving = true);
-    double gallons = double.parse(_gallonsController.text);
-    double totalCost = double.parse(_costController.text);
+    double gallons = values.gallons!;
+    double totalCost = values.totalCost!.toDouble();
     FuelLog log = FuelLog(
       id: generateId(),
       vehicleId: vehicleId,
-      date: _date,
-      odometer: int.parse(_odometerController.text),
+      date: values.date,
+      odometer: values.odometer!,
       gallons: gallons,
       totalCost: totalCost,
       // Se calcula, no se pide en el formulario — evita que quede
       // inconsistente con costo/galones cargados a mano.
-      pricePerGallon: gallons > 0 ? totalCost / gallons : null,
-      isFullTank: _fullTank,
-      isExtraFuel: _extraFuel,
-      stationName: _stationController.text.trim().isEmpty
-          ? null
-          : _stationController.text.trim(),
+      pricePerGallon: totalCost / gallons,
+      isFullTank: values.fullTank,
+      isExtraFuel: values.extraFuel,
+      stationName: values.station,
     );
     try {
       await ref.read(fuelLogActionsProvider).create(log);
@@ -75,15 +154,11 @@ class _RegisterFuelScreenState extends ConsumerState<RegisterFuelScreen> {
       return;
     }
     if (!mounted) return;
-    unawaited(Navigator.of(context).maybePop());
+    // `pop` (no `maybePop`) para saltarse el guard de cambios sin guardar.
+    Navigator.of(context).pop();
   }
 
-  bool get _isToday {
-    DateTime now = DateTime.now();
-    return _date.year == now.year &&
-        _date.month == now.month &&
-        _date.day == now.day;
-  }
+  bool get _isToday => DateUtils.isSameDay(_date, DateTime.now());
 
   /// Rango válido para el Odómetro de este tanqueo, según su fecha y los
   /// tanqueos vecinos ya guardados (el Odómetro nunca retrocede en el
@@ -124,108 +199,202 @@ class _RegisterFuelScreenState extends ConsumerState<RegisterFuelScreen> {
     return (min: min, max: max);
   }
 
+  String? _validateOdometer(String? v, ({int? min, int? max}) bounds) {
+    int? n = parseGroupedInt(v ?? '');
+    if (n == null) return 'Ingresa el kilometraje.';
+    if (bounds.min != null && n < bounds.min!) {
+      return 'Debe ser ≥ ${integerFormat.format(bounds.min)} km.';
+    }
+    if (bounds.max != null && n > bounds.max!) {
+      return 'Debe ser ≤ ${integerFormat.format(bounds.max)} km.';
+    }
+    return null;
+  }
+
+  String? _validateGallons(String? v, double? tankCapacity) {
+    double? gallons = parseDecimal(v ?? '');
+    if (gallons == null) return 'Ingresa los galones.';
+    if (gallons <= 0) return 'Debe ser mayor a 0.';
+    if (tankCapacity != null && gallons > tankCapacity) {
+      return 'Supera la capacidad del tanque '
+          '(${tankCapacity.toStringAsFixed(1)} gal).';
+    }
+    return null;
+  }
+
+  String _odometerHelper(({int? min, int? max}) bounds) {
+    if (bounds.min != null && bounds.max != null) {
+      return 'Entre ${integerFormat.format(bounds.min)} y '
+          '${integerFormat.format(bounds.max)} km.';
+    }
+    if (bounds.min != null) {
+      return 'Último registrado: ${integerFormat.format(bounds.min)} km.';
+    }
+    if (bounds.max != null) {
+      return 'Máximo ${integerFormat.format(bounds.max)} km.';
+    }
+    return '';
+  }
+
   @override
   Widget build(BuildContext context) {
     Vehicle? vehicle = ref.watch(selectedVehicleProvider);
     List<FuelLog> existingLogs = vehicle == null
         ? const <FuelLog>[]
         : ref.watch(fuelLogsProvider(vehicle.id)).value ?? const <FuelLog>[];
-    return BlueprintScaffold(
-      appBar: const BlueprintFormAppBar(title: 'Registrar Tanqueo'),
-      body: vehicle == null
-          ? const Center(child: Text('Selecciona un vehículo primero.'))
-          : BlueprintFormBody(
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Fecha del tanqueo'),
-                      subtitle: Text(_formatDate(_date)),
-                      trailing: const Icon(Icons.calendar_today),
-                      onTap: _pickDate,
-                    ),
-                    const SizedBox(height: 8),
-                    BlueprintTextField(
-                      label: 'Odómetro (km)',
-                      controller: _odometerController,
-                      keyboardType: TextInputType.number,
-                      validator: (String? v) {
-                        int? n = int.tryParse(v ?? '');
-                        if (n == null) return 'Ingresa un número válido.';
-                        ({int? min, int? max}) bounds = _odometerBounds(
-                          existingLogs,
-                          vehicle.currentOdometer,
-                        );
-                        if (bounds.min != null && n < bounds.min!) {
-                          return 'Debe ser ≥ ${bounds.min} km.';
-                        }
-                        if (bounds.max != null && n > bounds.max!) {
-                          return 'Debe ser ≤ ${bounds.max} km.';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    BlueprintTextField(
-                      label: 'Galones',
-                      controller: _gallonsController,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
+    ({int? min, int? max}) bounds = vehicle == null
+        ? (min: null, max: null)
+        : _odometerBounds(existingLogs, vehicle.currentOdometer);
+    String odometerHelper = _odometerHelper(bounds);
+    return BlueprintUnsavedChangesGuard(
+      dirty: _dirty,
+      busy: _saving,
+      child: BlueprintScaffold(
+        appBar: const BlueprintFormAppBar(title: 'Registrar Tanqueo'),
+        body: vehicle == null
+            ? const Center(
+                child: Text(
+                  'Selecciona un vehículo primero.',
+                  style: AppTextStyles.bodyLarge,
+                ),
+              )
+            : BlueprintFormBody(
+                child: Form(
+                  key: _formKey,
+                  onChanged: _updateDirty,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      BlueprintDateField(
+                        label: 'Fecha del tanqueo',
+                        date: _date,
+                        onTap: _pickDate,
                       ),
-                      validator: (String? v) => double.tryParse(v ?? '') == null
-                          ? 'Ingresa un número válido.'
-                          : null,
-                    ),
-                    const SizedBox(height: 16),
-                    BlueprintTextField(
-                      label: 'Costo total (COP)',
-                      controller: _costController,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
+                      const SizedBox(height: 16),
+                      BlueprintTextField(
+                        label: 'Odómetro (km)',
+                        controller: _odometerController,
+                        keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.next,
+                        inputFormatters: const <TextInputFormatter>[
+                          ThousandsSeparatorInputFormatter(maxDigits: 7),
+                        ],
+                        helperText: odometerHelper.isEmpty
+                            ? null
+                            : odometerHelper,
+                        validator: (String? v) => _validateOdometer(v, bounds),
                       ),
-                      validator: (String? v) => double.tryParse(v ?? '') == null
-                          ? 'Ingresa un número válido.'
-                          : null,
-                    ),
-                    const SizedBox(height: 16),
-                    BlueprintTextField(
-                      label: 'Estación (opcional)',
-                      controller: _stationController,
-                    ),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Tanque lleno'),
-                      subtitle: const Text(
-                        'Marca esto solo si el tanque quedó realmente lleno '
-                        'al terminar de tanquear.',
+                      const SizedBox(height: 16),
+                      BlueprintFieldPair(
+                        first: BlueprintTextField(
+                          label: 'Galones',
+                          controller: _gallonsController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          textInputAction: TextInputAction.next,
+                          inputFormatters: <TextInputFormatter>[
+                            decimalInputFormatter,
+                          ],
+                          validator: (String? v) =>
+                              _validateGallons(v, vehicle.tankCapacityGallons),
+                        ),
+                        second: BlueprintTextField(
+                          label: 'Costo total (COP)',
+                          controller: _costController,
+                          keyboardType: TextInputType.number,
+                          textInputAction: TextInputAction.next,
+                          inputFormatters: const <TextInputFormatter>[
+                            ThousandsSeparatorInputFormatter(),
+                          ],
+                          validator: _validateCopAmount,
+                        ),
                       ),
-                      value: _fullTank,
-                      onChanged: (bool v) => setState(() => _fullTank = v),
-                    ),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Gasolina extra'),
-                      subtitle: const Text(
-                        'Marca esto si tanqueaste gasolina extra/premium.',
+                      _PricePerGallonPreview(
+                        gallonsController: _gallonsController,
+                        costController: _costController,
                       ),
-                      value: _extraFuel,
-                      onChanged: (bool v) => setState(() => _extraFuel = v),
-                    ),
-                    const SizedBox(height: 16),
-                    BlueprintPrimaryButton(
-                      label: 'GUARDAR',
-                      loading: _saving,
-                      onPressed: () => _submit(vehicle.id),
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                      BlueprintTextField(
+                        label: 'Estación (opcional)',
+                        controller: _stationController,
+                        textCapitalization: TextCapitalization.words,
+                        textInputAction: TextInputAction.done,
+                      ),
+                      const SizedBox(height: 8),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Tanque lleno'),
+                        subtitle: const Text(
+                          'Marca esto solo si el tanque quedó realmente lleno '
+                          'al terminar de tanquear.',
+                        ),
+                        value: _fullTank,
+                        onChanged: (bool v) {
+                          setState(() => _fullTank = v);
+                          _updateDirty();
+                        },
+                      ),
+                      if (_gasolineFuelTypes.contains(vehicle.fuelType))
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text('Gasolina extra'),
+                          subtitle: const Text(
+                            'Marca esto si tanqueaste gasolina extra/premium.',
+                          ),
+                          value: _extraFuel,
+                          onChanged: (bool v) {
+                            setState(() => _extraFuel = v);
+                            _updateDirty();
+                          },
+                        ),
+                      const SizedBox(height: 24),
+                      BlueprintPrimaryButton(
+                        label: 'GUARDAR',
+                        loading: _saving,
+                        onPressed: () => _submit(vehicle.id),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
+      ),
     );
   }
+}
 
-  String _formatDate(DateTime date) => '${date.day}/${date.month}/${date.year}';
+/// Precio por galón calculado en vivo a partir de galones y costo, para que
+/// el usuario detecte un error de digitación antes de guardar. Escucha los
+/// controllers directamente para no reconstruir todo el formulario en cada
+/// tecla.
+class _PricePerGallonPreview extends StatelessWidget {
+  const _PricePerGallonPreview({
+    required this.gallonsController,
+    required this.costController,
+  });
+
+  final TextEditingController gallonsController;
+  final TextEditingController costController;
+
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: Listenable.merge(<Listenable>[
+      gallonsController,
+      costController,
+    ]),
+    builder: (BuildContext context, Widget? _) {
+      double? gallons = parseDecimal(gallonsController.text);
+      int? cost = parseGroupedInt(costController.text);
+      if (gallons == null || gallons <= 0 || cost == null || cost <= 0) {
+        return const SizedBox.shrink();
+      }
+      return Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Text(
+          'Precio por galón: ${copFormat.format(cost / gallons)}',
+          style: AppTextStyles.bodySmall,
+        ),
+      );
+    },
+  );
 }

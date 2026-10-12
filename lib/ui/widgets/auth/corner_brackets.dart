@@ -27,7 +27,7 @@ class CornerBrackets extends StatelessWidget {
             size: size,
             color: bracketColor,
             strokeWidth: strokeWidth,
-            corners: const <_Corner>{_Corner.topLeft},
+            corners: const <BracketCorner>{BracketCorner.topLeft},
           ),
         ),
         Positioned(
@@ -37,7 +37,7 @@ class CornerBrackets extends StatelessWidget {
             size: size,
             color: bracketColor,
             strokeWidth: strokeWidth,
-            corners: const <_Corner>{_Corner.topRight},
+            corners: const <BracketCorner>{BracketCorner.topRight},
           ),
         ),
         Positioned(
@@ -47,7 +47,7 @@ class CornerBrackets extends StatelessWidget {
             size: size,
             color: bracketColor,
             strokeWidth: strokeWidth,
-            corners: const <_Corner>{_Corner.bottomLeft},
+            corners: const <BracketCorner>{BracketCorner.bottomLeft},
           ),
         ),
         Positioned(
@@ -57,15 +57,13 @@ class CornerBrackets extends StatelessWidget {
             size: size,
             color: bracketColor,
             strokeWidth: strokeWidth,
-            corners: const <_Corner>{_Corner.bottomRight},
+            corners: const <BracketCorner>{BracketCorner.bottomRight},
           ),
         ),
       ],
     );
   }
 }
-
-enum _Corner { topLeft, topRight, bottomLeft, bottomRight }
 
 class _Bracket extends StatelessWidget {
   const _Bracket({
@@ -77,7 +75,7 @@ class _Bracket extends StatelessWidget {
   final double size;
   final Color color;
   final double strokeWidth;
-  final Set<_Corner> corners;
+  final Set<BracketCorner> corners;
 
   @override
   Widget build(BuildContext context) => CustomPaint(
@@ -98,7 +96,7 @@ class _BracketPainter extends CustomPainter {
   });
   final Color color;
   final double strokeWidth;
-  final Set<_Corner> corners;
+  final Set<BracketCorner> corners;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -111,18 +109,18 @@ class _BracketPainter extends CustomPainter {
     double w = size.width;
     double h = size.height;
 
-    for (_Corner corner in corners) {
+    for (BracketCorner corner in corners) {
       switch (corner) {
-        case _Corner.topLeft:
+        case BracketCorner.topLeft:
           canvas.drawLine(const Offset(0, 0), Offset(w, 0), paint);
           canvas.drawLine(const Offset(0, 0), Offset(0, h), paint);
-        case _Corner.topRight:
+        case BracketCorner.topRight:
           canvas.drawLine(const Offset(0, 0), Offset(w, 0), paint);
           canvas.drawLine(Offset(w, 0), Offset(w, h), paint);
-        case _Corner.bottomLeft:
+        case BracketCorner.bottomLeft:
           canvas.drawLine(Offset(0, h), Offset(w, h), paint);
           canvas.drawLine(const Offset(0, 0), Offset(0, h), paint);
-        case _Corner.bottomRight:
+        case BracketCorner.bottomRight:
           canvas.drawLine(Offset(0, h), Offset(w, h), paint);
           canvas.drawLine(Offset(w, 0), Offset(w, h), paint);
       }

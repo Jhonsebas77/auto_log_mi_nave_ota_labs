@@ -8,31 +8,64 @@ final RegExp _plateRegExp = RegExp(r'^[A-Z]{3}[0-9]{2}[A-Z0-9]?$');
 String _normalizePlate(String plate) =>
     plate.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
 
-/// Acepta coma decimal ("12,5"), que es lo habitual en Colombia.
-double? _parseDecimal(String text) =>
-    double.tryParse(text.trim().replaceAll(',', '.'));
-
-String? _trimmedOrNull(String text) => text.trim().isEmpty ? null : text.trim();
-
 const int _minVehicleYear = 1950;
 const double _maxTankCapacityGallons = 100;
 
-enum _PhotoAction { camera, gallery, remove }
+/// Valores del formulario ya normalizados. Implementa `==` por valor
+/// para detectar si hay cambios sin guardar.
+class _VehicleFormValues {
+  const _VehicleFormValues({
+    required this.nickname,
+    required this.plate,
+    required this.brand,
+    required this.model,
+    required this.year,
+    required this.odometer,
+    required this.tankCapacity,
+    required this.fuelType,
+    required this.color,
+    required this.photoPath,
+  });
 
-/// Valores del formulario ya normalizados. Al ser un record tiene `==` por
-/// valor, así que también sirve para detectar si hay cambios sin guardar.
-typedef _VehicleFormValues = ({
-  String? nickname,
-  String plate,
-  String brand,
-  String model,
-  int? year,
-  int? odometer,
-  double? tankCapacity,
-  FuelType fuelType,
-  String color,
-  String? photoPath,
-});
+  final String? nickname;
+  final String plate;
+  final String brand;
+  final String model;
+  final int? year;
+  final int? odometer;
+  final double? tankCapacity;
+  final FuelType fuelType;
+  final String color;
+  final String? photoPath;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _VehicleFormValues &&
+      other.nickname == nickname &&
+      other.plate == plate &&
+      other.brand == brand &&
+      other.model == model &&
+      other.year == year &&
+      other.odometer == odometer &&
+      other.tankCapacity == tankCapacity &&
+      other.fuelType == fuelType &&
+      other.color == color &&
+      other.photoPath == photoPath;
+
+  @override
+  int get hashCode => Object.hash(
+    nickname,
+    plate,
+    brand,
+    model,
+    year,
+    odometer,
+    tankCapacity,
+    fuelType,
+    color,
+    photoPath,
+  );
+}
 
 /// Formulario compartido para crear y editar un vehículo.
 ///
@@ -50,7 +83,8 @@ class VehicleFormScreen extends ConsumerStatefulWidget {
   ConsumerState<VehicleFormScreen> createState() => _VehicleFormScreenState();
 }
 
-class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
+class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen>
+    with _AttachmentUploadMixin<VehicleFormScreen> {
   static const Logger _log = Logger('VehicleFormScreen');
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   late final TextEditingController _nicknameController;
@@ -63,7 +97,6 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
   late FuelType _fuelType;
   late String _color;
   String? _photoPath;
-  bool _uploadingPhoto = false;
   bool _saving = false;
 
   late final _VehicleFormValues _initialValues;
@@ -83,7 +116,7 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
     _modelController = TextEditingController(text: vehicle?.model);
     _yearController = TextEditingController(text: vehicle?.year.toString());
     _odometerController = TextEditingController(
-      text: vehicle == null ? '0' : vehicle.currentOdometer.toString(),
+      text: integerFormat.format(vehicle?.currentOdometer ?? 0),
     );
     _tankCapacityController = TextEditingController(
       text: vehicle?.tankCapacityGallons?.toString() ?? '',
@@ -113,14 +146,14 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
     super.dispose();
   }
 
-  _VehicleFormValues _readForm() => (
-    nickname: _trimmedOrNull(_nicknameController.text),
+  _VehicleFormValues _readForm() => _VehicleFormValues(
+    nickname: trimmedOrNull(_nicknameController.text),
     plate: _normalizePlate(_plateController.text),
     brand: _brandController.text.trim(),
     model: _modelController.text.trim(),
     year: int.tryParse(_yearController.text.trim()),
-    odometer: int.tryParse(_odometerController.text.trim()),
-    tankCapacity: _parseDecimal(_tankCapacityController.text),
+    odometer: parseGroupedInt(_odometerController.text),
+    tankCapacity: parseDecimal(_tankCapacityController.text),
     fuelType: _fuelType,
     color: _color,
     photoPath: _photoPath,
@@ -131,67 +164,16 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
     if (dirty != _dirty) setState(() => _dirty = dirty);
   }
 
-  Future<void> _onPhotoTap() async {
-    String? userId = ref.read(authControllerProvider).user?.id;
-    if (userId == null) return;
-    bool hasPhoto = _photoPath != null;
-    // La hoja solo elige la acción; la subida la hace la pantalla para poder
-    // mostrar el progreso y no perder el resultado si la hoja se cierra.
-    _PhotoAction? action = await showModalBottomSheet<_PhotoAction>(
-      context: context,
-      builder: (BuildContext context) => SafeArea(
-        child: Wrap(
-          children: <Widget>[
-            ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: const Text('Tomar foto'),
-              onTap: () => Navigator.pop(context, _PhotoAction.camera),
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Elegir de galería'),
-              onTap: () => Navigator.pop(context, _PhotoAction.gallery),
-            ),
-            if (hasPhoto)
-              ListTile(
-                leading: const Icon(
-                  Icons.delete_outline,
-                  color: BlueprintColors.danger,
-                ),
-                title: const Text('Quitar foto'),
-                onTap: () => Navigator.pop(context, _PhotoAction.remove),
-              ),
-          ],
-        ),
-      ),
-    );
-    if (action == null || !mounted) return;
-    if (action == _PhotoAction.remove) {
-      setState(() => _photoPath = null);
+  Future<void> _onPhotoTap() => _pickAttachment(
+    category: 'vehicle',
+    hasAttachment: _photoPath != null,
+    removeLabel: 'Quitar foto',
+    errorMessage: 'No se pudo subir la foto.',
+    onChanged: (String? path) {
+      setState(() => _photoPath = path);
       _updateDirty();
-      return;
-    }
-    setState(() => _uploadingPhoto = true);
-    AttachmentPickerService picker = ref.read(attachmentPickerServiceProvider);
-    try {
-      String? path = action == _PhotoAction.camera
-          ? await picker.pickImageFromCamera(
-              userId: userId,
-              category: 'vehicle',
-            )
-          : await picker.pickImageFromGallery(
-              userId: userId,
-              category: 'vehicle',
-            );
-      if (path != null) _photoPath = path;
-    } catch (e) {
-      _log.error('_onPhotoTap(${action.name}): $e');
-      if (mounted) showErrorSnackBar(context, 'No se pudo subir la foto.');
-    }
-    if (!mounted) return;
-    setState(() => _uploadingPhoto = false);
-    _updateDirty();
-  }
+    },
+  );
 
   Future<bool> _confirmLowerOdometer(int current) async {
     bool? confirmed = await showDialog<bool>(
@@ -287,8 +269,8 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
       }
     }
     if (!mounted) return;
-    // `pop` (no `maybePop`) para saltarse el PopScope de cambios sin
-    // guardar: acaban de guardarse.
+    // `pop` (no `maybePop`) para saltarse el guard de cambios sin guardar:
+    // acaban de guardarse.
     Navigator.of(context).pop();
   }
 
@@ -298,12 +280,6 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
     if (!mounted) return;
     setState(() => _saving = false);
     showErrorSnackBar(context, message);
-  }
-
-  Future<void> _onPopBlocked() async {
-    if (_saving) return;
-    NavigatorState navigator = Navigator.of(context);
-    if (await showDiscardChangesDialog(context)) navigator.pop();
   }
 
   String? _validatePlate(String? v) {
@@ -324,13 +300,9 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
     return null;
   }
 
-  String? _validateOdometer(String? v) => int.tryParse(v?.trim() ?? '') == null
-      ? 'Ingresa un número válido.'
-      : null;
-
   String? _validateTankCapacity(String? v) {
     if (v == null || v.trim().isEmpty) return null;
-    double? gallons = _parseDecimal(v);
+    double? gallons = parseDecimal(v);
     if (gallons == null) return 'Ingresa un número válido.';
     if (gallons <= 0 || gallons > _maxTankCapacityGallons) {
       return 'Debe estar entre 0 y ${_maxTankCapacityGallons.toInt()} gal.';
@@ -338,17 +310,12 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
     return null;
   }
 
-  static String? _required(String? v, String message) =>
-      (v == null || v.trim().isEmpty) ? message : null;
-
   @override
   Widget build(BuildContext context) {
     bool editing = _editing;
-    return PopScope<Object?>(
-      canPop: !_dirty && !_saving,
-      onPopInvokedWithResult: (bool didPop, Object? _) {
-        if (!didPop) unawaited(_onPopBlocked());
-      },
+    return BlueprintUnsavedChangesGuard(
+      dirty: _dirty,
+      busy: _saving,
       child: BlueprintScaffold(
         appBar: BlueprintFormAppBar(
           title: editing ? 'Editar Vehículo' : 'Agregar Vehículo',
@@ -360,7 +327,7 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                const _FormSectionHeader('Identificación', first: true),
+                const BlueprintFormSectionHeader('Identificación', first: true),
                 BlueprintTextField(
                   label: 'Apodo (opcional)',
                   controller: _nicknameController,
@@ -398,17 +365,18 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
                 UploadZone(
                   filePath: _photoPath,
                   onTap: _onPhotoTap,
-                  loading: _uploadingPhoto,
+                  loading: _uploadingAttachment,
                   label: editing ? 'Cambiar foto' : 'Agregar foto',
                 ),
-                const _FormSectionHeader('Especificaciones'),
-                _FieldPair(
+                const BlueprintFormSectionHeader('Especificaciones'),
+                BlueprintFieldPair(
                   first: BlueprintTextField(
                     label: 'Marca',
                     controller: _brandController,
                     textCapitalization: TextCapitalization.words,
                     textInputAction: TextInputAction.next,
-                    validator: (String? v) => _required(v, 'Ingresa la marca.'),
+                    validator: (String? v) =>
+                        _validateRequired(v, 'Ingresa la marca.'),
                   ),
                   second: BlueprintTextField(
                     label: 'Modelo',
@@ -416,7 +384,7 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
                     textCapitalization: TextCapitalization.words,
                     textInputAction: TextInputAction.next,
                     validator: (String? v) =>
-                        _required(v, 'Ingresa el modelo.'),
+                        _validateRequired(v, 'Ingresa el modelo.'),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -431,7 +399,7 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
                   ],
                   validator: _validateYear,
                 ),
-                const _FormSectionHeader('Combustible y uso'),
+                const BlueprintFormSectionHeader('Combustible y uso'),
                 BlueprintDropdownField<FuelType>(
                   label: 'Tipo de combustible',
                   value: _fuelType,
@@ -443,7 +411,7 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                _FieldPair(
+                BlueprintFieldPair(
                   first: BlueprintTextField(
                     label: 'Tanque (gal, opcional)',
                     controller: _tankCapacityController,
@@ -452,7 +420,7 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
                     ),
                     textInputAction: TextInputAction.next,
                     inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                      decimalInputFormatter,
                     ],
                     validator: _validateTankCapacity,
                   ),
@@ -461,11 +429,10 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
                     controller: _odometerController,
                     keyboardType: TextInputType.number,
                     textInputAction: TextInputAction.done,
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(7),
+                    inputFormatters: const <TextInputFormatter>[
+                      ThousandsSeparatorInputFormatter(maxDigits: 7),
                     ],
-                    validator: _validateOdometer,
+                    validator: _validateOdometerText,
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -473,7 +440,7 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
                   label: editing ? 'GUARDAR CAMBIOS' : 'GUARDAR',
                   loading: _saving,
                   // Sin foto subida todavía no hay ruta que guardar.
-                  onPressed: _uploadingPhoto ? null : _submit,
+                  onPressed: _uploadingAttachment ? null : _submit,
                 ),
               ],
             ),
@@ -482,52 +449,6 @@ class _VehicleFormScreenState extends ConsumerState<VehicleFormScreen> {
       ),
     );
   }
-}
-
-/// Título de cada grupo de campos del formulario.
-class _FormSectionHeader extends StatelessWidget {
-  const _FormSectionHeader(this.label, {this.first = false});
-
-  final String label;
-  final bool first;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: EdgeInsets.only(top: first ? 0 : 32, bottom: 16),
-    child: CustomDividerWithLabel(
-      label: label.toUpperCase(),
-      color: BlueprintColors.textMuted,
-    ),
-  );
-}
-
-/// Dos campos lado a lado cuando hay ancho suficiente; apilados si no (ej.
-/// teléfonos angostos).
-class _FieldPair extends StatelessWidget {
-  const _FieldPair({required this.first, required this.second});
-
-  static const double _minRowWidth = 400;
-
-  final Widget first;
-  final Widget second;
-
-  @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (BuildContext context, BoxConstraints constraints) =>
-        constraints.maxWidth >= _minRowWidth
-        ? Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Expanded(child: first),
-              const SizedBox(width: 16),
-              Expanded(child: second),
-            ],
-          )
-        : Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[first, const SizedBox(height: 16), second],
-          ),
-  );
 }
 
 /// Placa en mayúsculas y solo letras/dígitos mientras se escribe.

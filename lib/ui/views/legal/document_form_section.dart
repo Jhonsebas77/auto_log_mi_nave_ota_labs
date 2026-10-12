@@ -9,6 +9,10 @@ part of com.auto_log_mi_nave_ota_labs.app.ui.views;
 /// aloja este formulario: ella decide qué pasa después de guardar (navegar
 /// atrás al crear, o volver a modo lectura al editar), así que también es
 /// quien guarda el flag de guardado — este widget solo lo refleja.
+///
+/// Los mismos límites del date picker impiden elegir una expedición
+/// posterior al vencimiento; la validación de fechas cubre además documentos
+/// viejos que ya quedaron guardados así.
 class DocumentFormSection extends ConsumerStatefulWidget {
   const DocumentFormSection({
     required this.saveLabel,
@@ -17,6 +21,7 @@ class DocumentFormSection extends ConsumerStatefulWidget {
     this.initial,
     this.prefilledType,
     this.vehicleId,
+    this.onDirtyChanged,
     super.key,
   });
 
@@ -33,13 +38,67 @@ class DocumentFormSection extends ConsumerStatefulWidget {
   final bool saving;
   final Future<void> Function(LegalDocument document) onSubmit;
 
+  /// Avisa cuando el formulario pasa a tener (o deja de tener) cambios sin
+  /// guardar, para que la pantalla que lo aloja proteja la salida (ver
+  /// [BlueprintUnsavedChangesGuard]).
+  final ValueChanged<bool>? onDirtyChanged;
+
   @override
   ConsumerState<DocumentFormSection> createState() =>
       _DocumentFormSectionState();
 }
 
-class _DocumentFormSectionState extends ConsumerState<DocumentFormSection> {
-  static const Logger _log = Logger('DocumentFormSection');
+/// Valores del formulario ya normalizados. Implementa `==` por valor
+/// para detectar si hay cambios sin guardar.
+class _DocumentFormValues {
+  const _DocumentFormValues({
+    required this.type,
+    required this.issueDate,
+    required this.expirationDate,
+    required this.entityName,
+    required this.documentNumber,
+    required this.cost,
+    required this.notes,
+    required this.attachmentPath,
+  });
+
+  final DocumentType type;
+  final DateTime? issueDate;
+  final DateTime expirationDate;
+  final String? entityName;
+  final String? documentNumber;
+  final int? cost;
+  final String? notes;
+  final String? attachmentPath;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _DocumentFormValues &&
+      other.type == type &&
+      other.issueDate == issueDate &&
+      other.expirationDate == expirationDate &&
+      other.entityName == entityName &&
+      other.documentNumber == documentNumber &&
+      other.cost == cost &&
+      other.notes == notes &&
+      other.attachmentPath == attachmentPath;
+
+  @override
+  int get hashCode => Object.hash(
+    type,
+    issueDate,
+    expirationDate,
+    entityName,
+    documentNumber,
+    cost,
+    notes,
+    attachmentPath,
+  );
+}
+
+class _DocumentFormSectionState extends ConsumerState<DocumentFormSection>
+    with _AttachmentUploadMixin<DocumentFormSection> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   late DocumentType _type;
   DateTime? _issueDate;
   late DateTime _expirationDate;
@@ -50,23 +109,35 @@ class _DocumentFormSectionState extends ConsumerState<DocumentFormSection> {
   final TextEditingController _notesController = TextEditingController();
   String? _attachmentPath;
 
+  late final _DocumentFormValues _initialValues;
+  bool _dirty = false;
+
+  static final DateTime _firstDate = DateTime(2000);
+  static final DateTime _lastDate = DateTime(2100);
+
   @override
   void initState() {
     super.initState();
     LegalDocument? document = widget.initial;
     if (document == null) {
       _type = widget.prefilledType ?? DocumentType.soat;
-      _expirationDate = DateTime.now().add(const Duration(days: 365));
+      _expirationDate = DateUtils.dateOnly(
+        DateTime.now().add(const Duration(days: 365)),
+      );
     } else {
       _type = document.documentType;
       _issueDate = document.issueDate;
       _expirationDate = document.expirationDate;
       _entityController.text = document.entityName ?? '';
-      _costController.text = document.cost?.toString() ?? '';
+      double? cost = document.cost;
+      _costController.text = cost == null
+          ? ''
+          : integerFormat.format(cost.round());
       _documentNumberController.text = document.documentNumber ?? '';
       _notesController.text = document.notes ?? '';
       _attachmentPath = document.documentUrl;
     }
+    _initialValues = _readForm();
   }
 
   @override
@@ -78,186 +149,188 @@ class _DocumentFormSectionState extends ConsumerState<DocumentFormSection> {
     super.dispose();
   }
 
-  Future<void> _pickDate({required bool isExpiration}) async {
+  _DocumentFormValues _readForm() => _DocumentFormValues(
+    type: _type,
+    issueDate: _issueDate,
+    expirationDate: _expirationDate,
+    entityName: trimmedOrNull(_entityController.text),
+    documentNumber: trimmedOrNull(_documentNumberController.text),
+    cost: parseGroupedInt(_costController.text),
+    notes: trimmedOrNull(_notesController.text),
+    attachmentPath: _attachmentPath,
+  );
+
+  void _updateDirty() {
+    bool dirty = _readForm() != _initialValues;
+    if (dirty == _dirty) return;
+    _dirty = dirty;
+    widget.onDirtyChanged?.call(dirty);
+  }
+
+  /// La expedición no puede ser posterior al vencimiento.
+  String? get _datesError {
+    DateTime? issueDate = _issueDate;
+    if (issueDate == null || !issueDate.isAfter(_expirationDate)) return null;
+    return 'No puede ser posterior al vencimiento.';
+  }
+
+  static DateTime _clampDate(DateTime date, DateTime min, DateTime max) =>
+      date.isBefore(min) ? min : (date.isAfter(max) ? max : date);
+
+  Future<void> _pickIssueDate() async {
+    DateTime today = DateUtils.dateOnly(DateTime.now());
+    DateTime last = _expirationDate.isBefore(today) ? _expirationDate : today;
+    if (last.isBefore(_firstDate)) last = _firstDate;
     DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: isExpiration ? _expirationDate : DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
+      initialDate: _clampDate(_issueDate ?? last, _firstDate, last),
+      firstDate: _firstDate,
+      lastDate: last,
     );
     if (picked == null) return;
-    setState(() {
-      if (isExpiration) {
-        _expirationDate = picked;
-      } else {
-        _issueDate = picked;
-      }
-    });
+    setState(() => _issueDate = picked);
+    _updateDirty();
   }
 
-  Future<void> _pickAttachment() async {
-    String? userId = ref.read(authControllerProvider).user?.id;
-    if (userId == null) return;
-    String? path = await showModalBottomSheet<String?>(
+  Future<void> _pickExpirationDate() async {
+    DateTime first = _issueDate ?? _firstDate;
+    DateTime? picked = await showDatePicker(
       context: context,
-      builder: (BuildContext context) => SafeArea(
-        child: Wrap(
-          children: <Widget>[
-            ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: const Text('Tomar foto'),
-              onTap: () async {
-                String? p;
-                try {
-                  p = await ref
-                      .read(attachmentPickerServiceProvider)
-                      .pickImageFromCamera(userId: userId, category: 'legal');
-                } catch (e) {
-                  _log.error('pickImageFromCamera: $e');
-                  if (context.mounted) {
-                    showErrorSnackBar(context, 'No se pudo subir el archivo.');
-                  }
-                }
-                if (context.mounted) Navigator.pop(context, p);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Elegir de galería'),
-              onTap: () async {
-                String? p;
-                try {
-                  p = await ref
-                      .read(attachmentPickerServiceProvider)
-                      .pickImageFromGallery(userId: userId, category: 'legal');
-                } catch (e) {
-                  _log.error('pickImageFromGallery: $e');
-                  if (context.mounted) {
-                    showErrorSnackBar(context, 'No se pudo subir el archivo.');
-                  }
-                }
-                if (context.mounted) Navigator.pop(context, p);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.picture_as_pdf),
-              title: const Text('Elegir PDF'),
-              onTap: () async {
-                String? p;
-                try {
-                  p = await ref
-                      .read(attachmentPickerServiceProvider)
-                      .pickPdf(userId: userId, category: 'legal');
-                } catch (e) {
-                  _log.error('pickPdf: $e');
-                  if (context.mounted) {
-                    showErrorSnackBar(context, 'No se pudo subir el archivo.');
-                  }
-                }
-                if (context.mounted) Navigator.pop(context, p);
-              },
-            ),
-          ],
-        ),
-      ),
+      initialDate: _clampDate(_expirationDate, first, _lastDate),
+      firstDate: first,
+      lastDate: _lastDate,
     );
-    if (path != null) setState(() => _attachmentPath = path);
+    if (picked == null) return;
+    setState(() => _expirationDate = picked);
+    _updateDirty();
   }
+
+  void _clearIssueDate() {
+    setState(() => _issueDate = null);
+    _updateDirty();
+  }
+
+  Future<void> _onAttachmentTap() => _pickAttachment(
+    category: 'legal',
+    hasAttachment: _attachmentPath != null,
+    allowPdf: true,
+    onChanged: (String? path) {
+      setState(() => _attachmentPath = path);
+      _updateDirty();
+    },
+  );
 
   Future<void> _submit() async {
+    bool fieldsValid = _formKey.currentState?.validate() ?? false;
+    if (!fieldsValid || _datesError != null) return;
+    _DocumentFormValues values = _readForm();
+    double? cost = values.cost?.toDouble();
     LegalDocument? original = widget.initial;
-    String? entityName = _entityController.text.trim().isEmpty
-        ? null
-        : _entityController.text.trim();
-    String? documentNumber = _documentNumberController.text.trim().isEmpty
-        ? null
-        : _documentNumberController.text.trim();
-    String? notes = _notesController.text.trim().isEmpty
-        ? null
-        : _notesController.text.trim();
     LegalDocument document = original == null
         ? LegalDocument(
             id: generateId(),
             vehicleId: widget.vehicleId!,
-            documentType: _type,
-            issueDate: _issueDate,
-            expirationDate: _expirationDate,
-            cost: double.tryParse(_costController.text),
-            entityName: entityName,
-            documentUrl: _attachmentPath,
-            documentNumber: documentNumber,
-            notes: notes,
+            documentType: values.type,
+            issueDate: values.issueDate,
+            expirationDate: values.expirationDate,
+            cost: cost,
+            entityName: values.entityName,
+            documentUrl: values.attachmentPath,
+            documentNumber: values.documentNumber,
+            notes: values.notes,
           )
         : original.copyWith(
-            documentType: _type,
-            issueDate: ValueWrapper<DateTime>(_issueDate),
-            expirationDate: _expirationDate,
-            cost: ValueWrapper<double>(double.tryParse(_costController.text)),
-            entityName: ValueWrapper<String>(entityName),
-            documentUrl: ValueWrapper<String>(_attachmentPath),
-            documentNumber: ValueWrapper<String>(documentNumber),
-            notes: ValueWrapper<String>(notes),
+            documentType: values.type,
+            issueDate: ValueWrapper<DateTime>(values.issueDate),
+            expirationDate: values.expirationDate,
+            cost: ValueWrapper<double>(cost),
+            entityName: ValueWrapper<String>(values.entityName),
+            documentUrl: ValueWrapper<String>(values.attachmentPath),
+            documentNumber: ValueWrapper<String>(values.documentNumber),
+            notes: ValueWrapper<String>(values.notes),
           );
     await widget.onSubmit(document);
   }
 
-  String _formatDate(DateTime date) => '${date.day}/${date.month}/${date.year}';
-
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: <Widget>[
-      BlueprintDropdownField<DocumentType>(
-        label: 'Tipo de documento',
-        value: _type,
-        items: DocumentType.values,
-        itemLabel: (DocumentType t) => t.label,
-        onChanged: (DocumentType t) => setState(() => _type = t),
-      ),
-      const SizedBox(height: 16),
-      ListTile(
-        contentPadding: EdgeInsets.zero,
-        title: const Text('Fecha de expedición (opcional)'),
-        subtitle: Text(
-          _issueDate == null ? 'Sin definir' : _formatDate(_issueDate!),
+  Widget build(BuildContext context) => Form(
+    key: _formKey,
+    onChanged: _updateDirty,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        const BlueprintFormSectionHeader('Documento', first: true),
+        BlueprintDropdownField<DocumentType>(
+          label: 'Tipo de documento',
+          value: _type,
+          items: DocumentType.values,
+          itemLabel: (DocumentType t) => t.label,
+          onChanged: (DocumentType t) {
+            setState(() => _type = t);
+            _updateDirty();
+          },
         ),
-        trailing: const Icon(Icons.calendar_today),
-        onTap: () => _pickDate(isExpiration: false),
-      ),
-      ListTile(
-        contentPadding: EdgeInsets.zero,
-        title: const Text('Fecha de vencimiento'),
-        subtitle: Text(_formatDate(_expirationDate)),
-        trailing: const Icon(Icons.calendar_today),
-        onTap: () => _pickDate(isExpiration: true),
-      ),
-      const SizedBox(height: 8),
-      BlueprintTextField(label: 'Entidad', controller: _entityController),
-      const SizedBox(height: 16),
-      BlueprintTextField(
-        label: '# de documento (opcional)',
-        controller: _documentNumberController,
-      ),
-      const SizedBox(height: 16),
-      BlueprintTextField(
-        label: 'Costo (opcional)',
-        controller: _costController,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      ),
-      const SizedBox(height: 16),
-      BlueprintTextField(
-        label: 'Información adicional (opcional)',
-        controller: _notesController,
-        maxLines: 3,
-      ),
-      const SizedBox(height: 16),
-      UploadZone(filePath: _attachmentPath, onTap: _pickAttachment),
-      const SizedBox(height: 24),
-      BlueprintPrimaryButton(
-        label: widget.saveLabel,
-        loading: widget.saving,
-        onPressed: _submit,
-      ),
-    ],
+        const SizedBox(height: 16),
+        BlueprintTextField(
+          label: '# de documento (opcional)',
+          controller: _documentNumberController,
+          textCapitalization: TextCapitalization.characters,
+          textInputAction: TextInputAction.next,
+        ),
+        const SizedBox(height: 16),
+        BlueprintTextField(
+          label: 'Entidad (opcional)',
+          controller: _entityController,
+          textCapitalization: TextCapitalization.words,
+          textInputAction: TextInputAction.next,
+        ),
+        const BlueprintFormSectionHeader('Vigencia'),
+        BlueprintFieldPair(
+          first: BlueprintDateField(
+            label: 'Expedición (opcional)',
+            date: _issueDate,
+            onTap: _pickIssueDate,
+            onClear: _clearIssueDate,
+            errorText: _datesError,
+          ),
+          second: BlueprintDateField(
+            label: 'Vencimiento',
+            date: _expirationDate,
+            onTap: _pickExpirationDate,
+          ),
+        ),
+        const BlueprintFormSectionHeader('Detalle'),
+        BlueprintTextField(
+          label: 'Costo (COP, opcional)',
+          controller: _costController,
+          keyboardType: TextInputType.number,
+          textInputAction: TextInputAction.next,
+          inputFormatters: const <TextInputFormatter>[
+            ThousandsSeparatorInputFormatter(),
+          ],
+        ),
+        const SizedBox(height: 16),
+        BlueprintTextField(
+          label: 'Información adicional (opcional)',
+          controller: _notesController,
+          textCapitalization: TextCapitalization.sentences,
+          keyboardType: TextInputType.multiline,
+          maxLines: 3,
+        ),
+        const SizedBox(height: 16),
+        UploadZone(
+          filePath: _attachmentPath,
+          onTap: _onAttachmentTap,
+          loading: _uploadingAttachment,
+        ),
+        const SizedBox(height: 32),
+        BlueprintPrimaryButton(
+          label: widget.saveLabel,
+          loading: widget.saving,
+          // Mientras sube el adjunto todavía no hay ruta que guardar.
+          onPressed: _uploadingAttachment ? null : _submit,
+        ),
+      ],
+    ),
   );
 }

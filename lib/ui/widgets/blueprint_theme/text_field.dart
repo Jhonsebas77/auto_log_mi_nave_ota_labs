@@ -21,6 +21,7 @@ class BlueprintTextField extends StatelessWidget {
     this.maxLines = 1,
     this.inputFormatters,
     this.autofocus = false,
+    this.helperText,
   });
 
   final String label;
@@ -42,6 +43,9 @@ class BlueprintTextField extends StatelessWidget {
   final List<TextInputFormatter>? inputFormatters;
   final bool autofocus;
 
+  /// Ayuda bajo el campo (ej. el último valor registrado).
+  final String? helperText;
+
   @override
   Widget build(BuildContext context) => TextFormField(
     controller: controller,
@@ -61,6 +65,10 @@ class BlueprintTextField extends StatelessWidget {
     inputFormatters: inputFormatters,
     autofocus: autofocus,
     style: AppTextStyles.bodyLarge,
-    decoration: InputDecoration(label: Text(label), suffixIcon: suffixIcon),
+    decoration: InputDecoration(
+      label: Text(label),
+      suffixIcon: suffixIcon,
+      helperText: helperText,
+    ),
   );
 }

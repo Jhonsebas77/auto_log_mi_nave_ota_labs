@@ -26,16 +26,32 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
   static const Logger _log = Logger('DocumentDetailScreen');
   bool _editing = false;
   bool _saving = false;
+  bool _dirty = false;
 
   void _startEditing() => setState(() => _editing = true);
 
-  void _cancelEditing() => setState(() => _editing = false);
+  Future<void> _cancelEditing() async {
+    if (_dirty && !await showDiscardChangesDialog(context)) return;
+    if (!mounted) return;
+    setState(() {
+      _editing = false;
+      _dirty = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    AsyncValue<List<LegalDocument>> documentsAsync = ref.watch(
+      legalDocumentsProvider(widget.vehicleId),
+    );
+    if (!documentsAsync.hasValue && !documentsAsync.hasError) {
+      return const BlueprintScaffold(
+        appBar: BlueprintFormAppBar(title: 'Documento'),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     List<LegalDocument> documents =
-        ref.watch(legalDocumentsProvider(widget.vehicleId)).value ??
-        const <LegalDocument>[];
+        documentsAsync.value ?? const <LegalDocument>[];
     LegalDocument? found;
     for (LegalDocument d in documents) {
       if (d.id == widget.documentId) {
@@ -57,49 +73,56 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
     }
     LegalDocument document = found;
 
-    return BlueprintScaffold(
-      appBar: BlueprintFormAppBar(
-        title: _editing ? 'Editar Documento' : document.documentType.label,
-        actions: <Widget>[
-          if (!_editing)
-            IconButton(onPressed: _startEditing, icon: const Icon(Icons.edit))
-          else
-            TextButton(
-              onPressed: _saving ? null : _cancelEditing,
-              child: const Text('CANCELAR'),
-            ),
-        ],
-      ),
-      body: BlueprintFormBody(
-        child: _editing
-            ? DocumentFormSection(
-                initial: document,
-                saveLabel: 'GUARDAR CAMBIOS',
-                saving: _saving,
-                onSubmit: (LegalDocument updated) async {
-                  setState(() => _saving = true);
-                  try {
-                    await ref
-                        .read(legalDocumentActionsProvider)
-                        .update(updated);
-                  } catch (e) {
-                    _log.error('update(${updated.id}): $e');
-                    if (!context.mounted) return;
-                    setState(() => _saving = false);
-                    showErrorSnackBar(
-                      context,
-                      'No se pudo actualizar el documento.',
-                    );
-                    return;
-                  }
-                  if (!mounted) return;
-                  setState(() {
-                    _saving = false;
-                    _editing = false;
-                  });
-                },
-              )
-            : _buildReadOnlyView(document),
+    return BlueprintUnsavedChangesGuard(
+      dirty: _editing && _dirty,
+      busy: _saving,
+      child: BlueprintScaffold(
+        appBar: BlueprintFormAppBar(
+          title: _editing ? 'Editar Documento' : document.documentType.label,
+          actions: <Widget>[
+            if (!_editing)
+              IconButton(onPressed: _startEditing, icon: const Icon(Icons.edit))
+            else
+              TextButton(
+                onPressed: _saving ? null : _cancelEditing,
+                child: const Text('CANCELAR'),
+              ),
+          ],
+        ),
+        body: BlueprintFormBody(
+          child: _editing
+              ? DocumentFormSection(
+                  initial: document,
+                  saveLabel: 'GUARDAR CAMBIOS',
+                  saving: _saving,
+                  onDirtyChanged: (bool dirty) =>
+                      setState(() => _dirty = dirty),
+                  onSubmit: (LegalDocument updated) async {
+                    setState(() => _saving = true);
+                    try {
+                      await ref
+                          .read(legalDocumentActionsProvider)
+                          .update(updated);
+                    } catch (e) {
+                      _log.error('update(${updated.id}): $e');
+                      if (!context.mounted) return;
+                      setState(() => _saving = false);
+                      showErrorSnackBar(
+                        context,
+                        'No se pudo actualizar el documento.',
+                      );
+                      return;
+                    }
+                    if (!mounted) return;
+                    setState(() {
+                      _saving = false;
+                      _editing = false;
+                      _dirty = false;
+                    });
+                  },
+                )
+              : _buildReadOnlyView(document),
+        ),
       ),
     );
   }
@@ -123,11 +146,11 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
         label: 'Fecha de expedición',
         value: document.issueDate == null
             ? 'Sin definir'
-            : _formatDate(document.issueDate!),
+            : formatShortDate(document.issueDate!),
       ),
       _DetailRow(
         label: 'Fecha de vencimiento',
-        value: _formatDate(document.expirationDate),
+        value: formatShortDate(document.expirationDate),
       ),
       _DetailRow(label: 'Entidad', value: document.entityName ?? 'Sin definir'),
       _DetailRow(
@@ -152,8 +175,6 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
       ],
     ],
   );
-
-  String _formatDate(DateTime date) => '${date.day}/${date.month}/${date.year}';
 }
 
 class _DetailRow extends StatelessWidget {

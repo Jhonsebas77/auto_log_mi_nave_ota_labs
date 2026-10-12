@@ -13,3 +13,20 @@ final NumberFormat copFormat = NumberFormat.currency(
 
 /// Enteros con separador de miles colombiano (1.240), p. ej. kilómetros.
 final NumberFormat integerFormat = NumberFormat.decimalPattern('es_CO');
+
+/// Fecha corta d/m/aaaa ("5/3/2026"), la usada en formularios y listas.
+String formatShortDate(DateTime date) =>
+    '${date.day}/${date.month}/${date.year}';
+
+/// Decimal escrito por el usuario. Acepta coma decimal ("12,5"), que es lo
+/// habitual en Colombia, además del punto.
+double? parseDecimal(String text) =>
+    double.tryParse(text.trim().replaceAll(',', '.'));
+
+/// Entero escrito con separador de miles ("1.240.000"), como lo deja
+/// `ThousandsSeparatorInputFormatter`.
+int? parseGroupedInt(String text) =>
+    int.tryParse(text.trim().replaceAll('.', ''));
+
+/// Texto recortado, o `null` si quedó vacío (campos opcionales).
+String? trimmedOrNull(String text) => text.trim().isEmpty ? null : text.trim();

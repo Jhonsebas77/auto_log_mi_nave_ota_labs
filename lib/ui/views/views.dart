@@ -34,6 +34,8 @@ part 'maintenance/register_maintenance_screen.dart';
 part 'maintenance/view.dart';
 part 'quick_actions_screen.dart';
 part 'settings/settings_screen.dart';
+part 'shared/attachment_upload_mixin.dart';
+part 'shared/form_validators.dart';
 part 'vehicles/add_screen.dart';
 part 'vehicles/edit_screen.dart';
 part 'vehicles/vehicle_form_screen.dart';

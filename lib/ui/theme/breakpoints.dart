@@ -1,17 +1,5 @@
 part of com.auto_log_mi_nave_ota_labs.app.ui.theme;
 
-/// Clase de tamaño de ventana para el layout adaptativo (web/tablet/móvil).
-enum WindowSize {
-  /// Móvil: bottom nav bar + contenido a una columna.
-  compact,
-
-  /// Tablet / ventana angosta: riel lateral compacto + top app bar.
-  medium,
-
-  /// Escritorio: sidebar completo (logo, labels, ajustes) sin top app bar.
-  expanded,
-}
-
 /// Breakpoints y anchos máximos del layout adaptativo. Valores alineados con
 /// las pantallas desktop del proyecto de Stitch "Panel Vehicular Colombia".
 class Breakpoints {

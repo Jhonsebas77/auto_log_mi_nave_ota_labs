@@ -2,6 +2,8 @@ library com.auto_log_mi_nave_ota_labs.app.ui.theme;
 
 import 'package:flutter/material.dart';
 
+import '../../core/enums/enums.dart';
+
 part 'app_text_styles.dart';
 part 'app_theme.dart';
 part 'blueprint_colors.dart';
